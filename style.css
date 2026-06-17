@@ -1,0 +1,44 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* El mapa ocupa tota la pantalla i queda fix a sota */
+#map {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* La narrativa passa per sobre del mapa */
+#scrolly {
+    position: relative;
+    z-index: 2;
+    pointer-events: none; /* Permet interactuar amb el mapa a través dels espais buits */
+}
+
+article {
+    padding: 0 20px;
+    margin: 0 auto;
+    max-width: 400px; /* Amplada de les caixes de text */
+}
+
+/* Cada bloc de text ha de tenir prou alçada per forçar l'scroll */
+.step {
+    margin: 0 auto 80vh auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    padding: 30px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    pointer-events: auto; /* Torna a activar la interacció per al text */
+}
+
+/* L'últim pas necessita marge inferior per poder activar-se */
+.step:last-child {
+    margin-bottom: 50vh;
+}
