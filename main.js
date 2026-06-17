@@ -8,24 +8,41 @@ const map = new maplibregl.Map({
 
 // 2. Carregar el GeoJSON local quan el mapa estigui a punt
 map.on('load', () => {
-    map.addSource('dades-tfg', {
+    // 1. Carregar la capa base (ex: el geojson de Badalona)
+    map.addSource('dades-bdn', {
         type: 'geojson',
-        data: './data/matriu_tfg.geojson' // Ruta relativa al teu arxiu dins del repositori
+        data: './data/bdn_aem.geojson' 
     });
 
-    // Afegir la capa de polígons bàsica (ajusta l'estil com vulguis)
     map.addLayer({
-        'id': 'capa-poligons',
-        'type': 'fill',
-        'source': 'dades-tfg',
+        'id': 'capa-poligons-bdn',
+        'type': 'fill', // Suposant que són polígons (seccions censals, barris...)
+        'source': 'dades-bdn',
         'paint': {
-            'fill-color': '#3182bd',
-            'fill-opacity': 0.6,
+            'fill-color': '#e0e0e0',
+            'fill-opacity': 0.8,
             'fill-outline-color': '#ffffff'
         }
     });
 
-    // Un cop les dades estan carregades, inicialitzem Scrollama
+    // 2. Carregar una segona capa (ex: els punts dels HUTs)
+    map.addSource('dades-huts', {
+        type: 'geojson',
+        data: './data/HUTbdn.geojson'
+    });
+
+    map.addLayer({
+        'id': 'capa-punts-huts',
+        'type': 'circle', // Suposant que són coordenades puntuals
+        'source': 'dades-huts',
+        'paint': {
+            'circle-color': '#e34a33',
+            'circle-radius': 5,
+            'circle-opacity': 0 // Comencem amb opacitat 0 perquè no es vegi al principi
+        }
+    });
+
+    // Un cop carregades les dades, inicialitzem l'scrollytelling
     initScrollama();
 });
 
@@ -38,21 +55,22 @@ function initScrollama() {
             step: '.step',
             offset: 0.5 // S'activa quan el bloc arriba a la meitat de la pantalla
         })
+        // Dins de initScrollama() ...
         .onStepEnter((response) => {
-            // response.element mostra quin bloc de text s'ha activat
             const stepIndex = response.element.dataset.step;
 
-            // Definir accions cartogràfiques segons el pas on es troba l'usuari
             if (stepIndex === "1") {
-                map.flyTo({ center: [2.1734, 41.3851], zoom: 12, pitch: 0 });
+                // Pas 1: Vista general de Badalona, HUTs invisibles
+                map.flyTo({ center: [2.2468, 41.4469], zoom: 13, pitch: 0 }); // Coordenades de Badalona
+                map.setPaintProperty('capa-punts-huts', 'circle-opacity', 0); 
             } 
             else if (stepIndex === "2") {
-                // Exemple: Moure la càmera cap a unes coordenades específiques d'un barri
-                map.flyTo({ center: [2.2111, 41.4422], zoom: 14.5, pitch: 45, duration: 2000 });
+                // Pas 2: Apareixen els HUTs
+                map.setPaintProperty('capa-punts-huts', 'circle-opacity', 0.9);
             } 
             else if (stepIndex === "3") {
-                // Exemple: Canviar el color de la capa per mostrar un canvi de variable de la matriu
-                map.setPaintProperty('capa-poligons', 'fill-color', '#e34a33');
+                // Pas 3: Moviment cap a una zona concreta de l'AMB
+                map.flyTo({ center: [2.1734, 41.3851], zoom: 12, pitch: 45 });
             }
         });
 
