@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrollymap - Transformació Urbana</title>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <main id="scrolly">
+        <article>
+            <section class="step" data-step="1">
+                <h2>Introducció territorial</h2>
+                <p>Aquí comença el relat del TFG. El mapa es posicionarà a la vista general de la zona d'estudi.</p>
+            </section>
+            
+            <section class="step" data-step="2">
+                <h2>Primeres dinàmiques de transformació</h2>
+                <p>En entrar en aquest bloc, el mapa farà un zoom automàtic cap al primer barri analitzat.</p>
+            </section>
+
+            <section class="step" data-step="3">
+                <h2>Anàlisi quantitativa de desplaçament</h2>
+                <p>Aquí podem canviar l'estilització o opacitat de la capa per mostrar les dades crítiques de la matriu.</p>
+            </section>
+        </article>
+    </main>
+
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <script src="main.js"></script>
+</body>
+</html>
