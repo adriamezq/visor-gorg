@@ -5,7 +5,7 @@ const MAPBOX_TOKEN = 'pk.ENGANXA_AQUI_EL_TEU_TOKEN_SENCER';
 const map = new maplibregl.Map({
     container: 'map',
     // Enganxa aquí l'URL de l'estil, assegurant-te d'afegir el token al final
-    style: `https://api.mapbox.com/styles/v1/EL_TEU_USUARI/ID_DEL_MAPA/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
+    style: `mapbox://styles/adriamezq/cmqilgk97000o01sj9hzge33b`,
     center: [2.2468, 41.4469], // Coordenades de Badalona
     zoom: 13
 });
