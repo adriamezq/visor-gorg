@@ -57,66 +57,56 @@
     </main>
 
     <script>
+        // 1. LES TEVES CLAUS DE MAPTILER
         const myApiKey = '9M9qZQCZlNegXMXSMKa5';
         const myTilesetId = '019edc81-7252-7462-86a2-a4f5c68dbdef';
-        
+
+        // 2. Inicialització del mapa
         const map = new maplibregl.Map({
             container: 'map',
-            center: [2.1686, 41.3874], 
+            center: [2.1686, 41.3874], // Centre AMB inicial
             zoom: 10,
             minZoom: 9, 
             maxZoom: 18,
             style: `https://api.maptiler.com/maps/darkmatter/style.json?key=${myApiKey}`,
-            interactive: false 
+            interactive: false // Desactivem el moviment manual per donar tot el control a l'scroll
         });
 
-        const estilGraduat = [
-            'step',
-            ['to-number', ['get', 'AEMlloguer']],
-            '#130a1c',       
-            94.421, '#231131',
-            104.438, '#331846',
-            111.312, '#44205c',
-            116.894, '#562873',
-            123.172, '#69308a',
-            131.119, '#7c38a1',
-            145.103, '#9041b9',
-            168.686, '#a44ad1'  
-        ];
-
         map.on('load', () => {
+            
+            // Font de dades principal
             map.addSource('dades_tfg', {
                 type: 'vector',
                 url: `https://api.maptiler.com/tiles/${myTilesetId}/tiles.json?key=${myApiKey}`
             });
 
-            // 1. CAPA AMB (Sencer)
+            // 1. CAPA AMB (Sencer) - Lila apagat
             map.addLayer({
                 'id': 'capa-aem-amb',
                 'type': 'fill',
                 'source': 'dades_tfg',
                 'source-layer': 'aem_sencer2',
                 'paint': {
-                    'fill-color': estilGraduat, 
+                    'fill-color': '#4a2b5e', 
                     'fill-opacity': 0.6,
-                    'fill-outline-color': '#000000'
+                    'fill-outline-color': '#1a0e22'
                 }
             });
 
-            // 2. CAPA BADALONA
+            // 2. CAPA BADALONA - Lila lleugerament més marcat
             map.addLayer({
                 'id': 'capa-aem-bdn',
                 'type': 'fill',
                 'source': 'dades_tfg',
                 'source-layer': 'aem_bdn2',
                 'paint': {
-                    'fill-color': estilGraduat,
-                    'fill-opacity': 0, 
-                    'fill-outline-color': '#4a2b5e'
+                    'fill-color': '#63397d',
+                    'fill-opacity': 0, // Comença invisible
+                    'fill-outline-color': '#e0e0e0'
                 }
             });
 
-            // 3. CAPA EDIFICIS (Farcit simple)
+            // 3. CAPA EDIFICIS (Farcit)
             map.addLayer({
                 'id': 'capa-edificis',
                 'type': 'fill',
@@ -125,15 +115,15 @@
                 'paint': {
                     'fill-color': [
                         'step',
-                        ['to-number', ['get', 'any']],
-                        '#1f1f1f',  
-                        2019, '#ff7700' 
+                        ['to-number', ['get', 'any']], // <-- CANVIA AIXÒ
+                        '#1a1a1a',  
+                        2019, '#ff7700' // Taronja
                     ],
-                    'fill-opacity': 0 
+                    'fill-opacity': 0 // Comença invisible
                 }
             });
 
-            // 4. CAPA EDIFICIS (Efecte Neó)
+            // 4. CAPA EDIFICIS (Glow Efecte Resplendor)
             map.addLayer({
                 'id': 'capa-edificis-glow',
                 'type': 'line',
@@ -142,13 +132,13 @@
                 'paint': {
                     'line-color': [
                         'step',
-                        ['to-number', ['get', 'any']],
+                        ['to-number', ['get', 'POSA_AQUI_LA_COLUMNA_ANY']], // <-- CANVIA AIXÒ
                         'transparent',  
-                        2019, '#ffaa00' 
+                        2019, '#ff7700' 
                     ],
                     'line-width': 4,
-                    'line-blur': 4,
-                    'line-opacity': 0 
+                    'line-blur': 4, // Això genera l'efecte neó
+                    'line-opacity': 0 // Comença invisible
                 }
             });
 
@@ -163,10 +153,11 @@
                     'circle-radius': 4,
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000',
-                    'circle-opacity': 0 
+                    'circle-opacity': 0 // Comença invisible
                 }
             });
 
+            // 3. COREOGRAFIA (Scrollama)
             const scroller = scrollama();
 
             scroller.setup({
@@ -176,9 +167,45 @@
                 const pas = response.element.dataset.step;
 
                 if (pas === "1") {
+                    // Pas 1: Vista AMB. S'ensenya el lila fosc.
                     map.flyTo({ center: [2.1686, 41.3874], zoom: 10.5, pitch: 0, speed: 0.8 });
                     map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.6);
                     map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0);
                     map.setPaintProperty('capa-edificis', 'fill-opacity', 0);
                     map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0);
-                    map.setPaintProperty('cap
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
+                } 
+                else if (pas === "2") {
+                    // Pas 2: Zoom Badalona. Destaca AEM_BDN2.
+                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.2); // Apaga la resta de l'AMB
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.8); // Ressalta Badalona
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0);
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
+                }
+                else if (pas === "3") {
+                    // Pas 3: Zoom al Gorg i apareixen Edificis + Glow.
+                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05); // Quasi invisible
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.8); // Activa el neó
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
+                }
+                else if (pas === "4") {
+                    // Pas 4: Moviment subtil i apareixen HUTs grocs.
+                    map.flyTo({ center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05);
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.8);
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 1); // Activa turisme
+                }
+            });
+
+            window.addEventListener('resize', scroller.resize);
+        });
+    </script>
+</body>
+</html>
