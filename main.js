@@ -1,48 +1,20 @@
-// 1. Inicialitzar el mapa de MapLibre
+// Afegeix la teva clau pública de Mapbox just a l'inici
+const MAPBOX_TOKEN = 'pk.ENGANXA_AQUI_EL_TEU_TOKEN_SENCER';
+
+// Inicialitzar el mapa
 const map = new maplibregl.Map({
     container: 'map',
-    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', // Mapa base neutre i gratuït
-    center: [2.1734, 41.3851], // Canvia-ho per les coordenades de la teva zona d'estudi [long, lat]
-    zoom: 12
+    // Enganxa aquí l'URL de l'estil, assegurant-te d'afegir el token al final
+    style: `https://api.mapbox.com/styles/v1/EL_TEU_USUARI/ID_DEL_MAPA/tiles/256/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
+    center: [2.2468, 41.4469], // Coordenades de Badalona
+    zoom: 13
 });
 
-// 2. Carregar el GeoJSON local quan el mapa estigui a punt
+// Com que Mapbox ja carrega les teves dades i colors des del núvol, 
+// no et cal fer map.addSource() ni map.addLayer() aquí. 
+// Només cal esperar que carregui per engegar l'scrollytelling.
+
 map.on('load', () => {
-    // 1. Carregar la capa base (ex: el geojson de Badalona)
-    map.addSource('dades-bdn', {
-        type: 'geojson',
-        data: './data/bdn_aem.geojson' 
-    });
-
-    map.addLayer({
-        'id': 'capa-poligons-bdn',
-        'type': 'fill', // Suposant que són polígons (seccions censals, barris...)
-        'source': 'dades-bdn',
-        'paint': {
-            'fill-color': '#e0e0e0',
-            'fill-opacity': 0.8,
-            'fill-outline-color': '#ffffff'
-        }
-    });
-
-    // 2. Carregar una segona capa (ex: els punts dels HUTs)
-    map.addSource('dades-huts', {
-        type: 'geojson',
-        data: './data/HUTbdn.geojson'
-    });
-
-    map.addLayer({
-        'id': 'capa-punts-huts',
-        'type': 'circle', // Suposant que són coordenades puntuals
-        'source': 'dades-huts',
-        'paint': {
-            'circle-color': '#e34a33',
-            'circle-radius': 5,
-            'circle-opacity': 0 // Comencem amb opacitat 0 perquè no es vegi al principi
-        }
-    });
-
-    // Un cop carregades les dades, inicialitzem l'scrollytelling
     initScrollama();
 });
 
