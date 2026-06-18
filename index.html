@@ -33,9 +33,10 @@
             pointer-events: none;
         }
         .loader-label {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.2em;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
             color: #ff7700;
             opacity: 0.8;
@@ -69,7 +70,8 @@
             --text:      #d8d8d8;
             --text-dim:  #888;
             --border:    rgba(255,119,0,0.35);
-            --font-head: 'Space Mono', monospace;
+            /* Tot Space Grotesk: headings en 600, body en 400, labels en 500 */
+            --font-head: 'Space Grotesk', sans-serif;
             --font-body: 'Space Grotesk', sans-serif;
 
             /* Gradient lila per als intervals de renda */
@@ -787,26 +789,80 @@
                 }
             });
 
-            // ── Amagar overlay quan el mapa estigui llest ────
-            // 'idle' s'emet quan totes les tiles visibles s'han renderitzat
-            // i no hi ha cap animació ni petició pendent.
-            const overlay = document.getElementById('loading-overlay');
-            let overlayDismissed = false;
-            function dismissOverlay() {
-                if (overlayDismissed) return;
-                overlayDismissed = true;
-                overlay.classList.add('hidden');
-                // Eliminem el node del DOM un cop la transició acaba
-                overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+            // ── Precalentament de tiles ───────────────────────
+            // El problema: les tiles vectorials es carreguen per demanda.
+            // Si l'overlay desapareix quan el zoom inicial (10.5) és idle,
+            // els zooms de passos posteriors (15, 15.2) no han estat demanats
+            // i el mapa apareix "a trossos" en fer scroll.
+            //
+            // Solució: fer un recorregut invisible per tots els zooms del story
+            // mantenint el mapa ocult (canvas opacity 0), i només quan tots els
+            // nivells hagin emès 'idle' consecutivament mostrar el mapa i amagar l'overlay.
+
+            const overlay    = document.getElementById('loading-overlay');
+            const loaderLabel = overlay.querySelector('.loader-label');
+            const canvas     = map.getCanvas();
+
+            // Ocultem el canvas mentre preallentem (l'overlay tapa de totes formes)
+            canvas.style.opacity = '0';
+
+            // Seqüència de posicions a preallentar (totes les que s'usen al story)
+            const warmupSteps = [
+                { label: 'Carregant escala metropolitana…', center: [2.1686, 41.3874], zoom: 10.5, pitch: 0,  bearing: 0   },
+                { label: 'Carregant Badalona…',             center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, bearing: -8  },
+                { label: 'Carregant el Gorg…',              center: [2.2355, 41.4411], zoom: 15,   pitch: 55, bearing: -15 },
+                { label: 'Carregant allotjaments…',         center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, bearing: -15 },
+            ];
+
+            let warmupIndex = 0;
+
+            function nextWarmup() {
+                if (warmupIndex >= warmupSteps.length) {
+                    // Tots els nivells estan a la caché del navegador → mostrem el mapa
+                    // Tornem a la posició inicial silenciosament
+                    map.jumpTo({ center: [2.1686, 41.3874], zoom: 10, pitch: 0, bearing: 0 });
+                    map.once('idle', () => {
+                        // Fade in del canvas i fade out de l'overlay
+                        canvas.style.transition = 'opacity 0.5s ease';
+                        canvas.style.opacity = '1';
+                        overlay.classList.add('hidden');
+                        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+                    });
+                    return;
+                }
+
+                const step = warmupSteps[warmupIndex];
+                loaderLabel.textContent = step.label;
+
+                // jumpTo és instantani (sense animació), perfecte per preallentar
+                map.jumpTo({ center: step.center, zoom: step.zoom, pitch: step.pitch, bearing: step.bearing });
+
+                // Esperem que el mapa estigui idle (totes les tiles del viewport carregades)
+                map.once('idle', () => {
+                    warmupIndex++;
+                    nextWarmup();
+                });
             }
-            // Esperem que el mapa estigui idle (totes les tiles carregades)
-            map.once('idle', dismissOverlay);
-            // Fallback: si per algun motiu idle no s'emet en 8 s, amaguem igualment
-            setTimeout(dismissOverlay, 8000);
+
+            // Fallback de seguretat: si alguna tile no respon en 15 s, continua igualment
+            const fallbackTimer = setTimeout(() => {
+                warmupIndex = warmupSteps.length;
+                nextWarmup();
+            }, 15000);
+
+            // Comencem el tour de precalentament immediatament
+            nextWarmup();
+
+            // Fallback global
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    canvas.style.opacity = '1';
+                    overlay.classList.add('hidden');
+                }
+            }, 20000);
 
             window.addEventListener('resize', scroller.resize);
         });
     </script>
 </body>
 </html>
-
