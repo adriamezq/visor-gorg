@@ -46,25 +46,25 @@
     </main>
 
     <script>
-        // Inicialitzem el lector de PMTiles
+        // 1. Inicialitzar el protocol de PMTiles
         let protocol = new pmtiles.Protocol();
         maplibregl.addProtocol("pmtiles", protocol.tile);
 
-        // Creem el mapa web
+        // 2. Inicialitzar el mapa i l'estil
         const map = new maplibregl.Map({
             container: 'map',
-            center: [2.2468, 41.4469], // Coordenades centrades a Badalona
+            center: [2.2468, 41.4469], 
             zoom: 12.5,
+            minZoom: 12, 
+            maxZoom: 18,
             style: {
                 version: 8,
-sources: {
-    'dades_tfg': {
-        type: 'vector',
-        url: 'pmtiles://./data/VisorDEF.pmtiles',
-        minzoom: 12, // El zoom mínim exacte que vas posar a QGIS
-        maxzoom: 15  // El zoom màxim exacte que vas posar a QGIS
-    }
-},
+                sources: {
+                    'dades_tfg': {
+                        type: 'vector',
+                        url: 'pmtiles://./data/VisorDEF.pmtiles',
+                        minzoom: 12, 
+                        maxzoom: 15
                     }
                 },
                 layers: [
@@ -77,11 +77,11 @@ sources: {
                         'id': 'capa-edificis',
                         'type': 'fill',
                         'source': 'dades_tfg',
-                        'source-layer': 'edificis',
+                        'source-layer': 'POSA_AQUI_EL_NOM_DE_LA_CAPA_D_EDIFICIS', // <-- CANVIA AIXÒ
                         'paint': {
                             'fill-color': [
                                 'step',
-                                ['to-number', ['get', 'any']],
+                                ['to-number', ['get', 'POSA_AQUI_LA_COLUMNA_ANY']], // <-- CANVIA AIXÒ
                                 '#1a1a1a',  
                                 2019, '#ff5500' 
                             ],
@@ -92,7 +92,7 @@ sources: {
                         'id': 'capa-huts',
                         'type': 'circle',
                         'source': 'dades_tfg',
-                        'source-layer': 'HUTbdn',
+                        'source-layer': 'POSA_AQUI_EL_NOM_DE_LA_CAPA_D_HUTS', // <-- CANVIA AIXÒ
                         'paint': {
                             'circle-color': '#ffff00',
                             'circle-radius': 4,
@@ -105,7 +105,7 @@ sources: {
             }
         });
 
-        // Configurem l'scroll
+        // 3. Configurem l'scroll amb Scrollama
         map.on('load', () => {
             const scroller = scrollama();
 
