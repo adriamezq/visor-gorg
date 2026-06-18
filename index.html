@@ -57,10 +57,14 @@
             zoom: 12.5,
             style: {
                 version: 8,
-                sources: {
-                    'dades_tfg': {
-                        type: 'vector',
-                        url: 'pmtiles://./data/VisorDEF.pmtiles'
+sources: {
+    'dades_tfg': {
+        type: 'vector',
+        url: 'pmtiles://./data/VisorDEF.pmtiles',
+        minzoom: 12, // El zoom mínim exacte que vas posar a QGIS
+        maxzoom: 15  // El zoom màxim exacte que vas posar a QGIS
+    }
+},
                     }
                 },
                 layers: [
