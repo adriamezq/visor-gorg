@@ -95,12 +95,6 @@
             overflow-x: hidden;
         }
 
-        /* ── Map-hero wrapper ─────────────────────────────── */
-        /* En desktop no té cap efecte visual (mapa i hero ja son fixed/absolut) */
-        #map-hero-wrapper {
-            position: relative;
-        }
-
         /* ── Mapa fixe ────────────────────────────────────── */
         #map {
             position: fixed;
@@ -133,6 +127,9 @@
         }
 
         /* ── Llegenda ─────────────────────────────────────── */
+        /* Control toggle (només visible al mòbil) */
+        #legend-toggle { display: none; }
+
         #legend {
             position: fixed;
             bottom: 28px; left: 20px;
@@ -199,8 +196,7 @@
 
         /* ── Hero screen ─────────────────────────────────── */
         #hero {
-            position: fixed;
-            inset: 0;
+            position: relative;
             z-index: 10;
             height: 100vh;
             display: flex;
@@ -390,86 +386,130 @@
 
         /* ── Mobile ───────────────────────────────────────── */
         @media (max-width: 600px) {
-            /* En mòbil, el wrapper és sticky i ocupa la meitat superior.
-               Quan l'usuari fa scroll, el text passa per sota però el mapa
-               sempre queda "enganxat" a la part superior de la pantalla. */
-            #map-hero-wrapper {
-                position: sticky;
-                top: 0;
-                height: 50vh;
-                z-index: 2;
-                flex-shrink: 0;
-            }
-
-            /* En mòbil el mapa omple el wrapper (no és fixed) */
+            /* Mapa fixe a la meitat superior: mai queda tapat */
             #map {
-                position: absolute;
-                inset: 0;
-                height: 100%;
+                height: 50vh;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                bottom: auto;
+                z-index: 1;
             }
 
-            /* El #scrolly ara és un flux normal: comença just sota el mapa */
+            /* Hero dins de la zona del mapa */
+            #hero {
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 50vh;
+                z-index: 10;
+                padding: 0 5% 3vh;
+                justify-content: flex-end;
+                pointer-events: none;
+            }
+            #hero h1 { font-size: 19px; margin-bottom: 10px; }
+            #hero p  { display: none; }
+
+            /* Zona de scroll: panell fix a la meitat inferior,
+               el contingut llisca DINS seu → el mapa mai queda tapat.
+               overflow-y:auto garanteix que el text NO surti mai
+               a la meitat superior (zona del mapa). */
             #scrolly {
+                position: fixed;
+                top: 50vh;
+                left: 0; right: 0; bottom: 0;
                 padding-top: 0;
-                position: relative;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
                 z-index: 10;
                 background: var(--bg);
+                /* Eliminem el padding-top heretat del desktop */
             }
 
-            /* Els steps ocupen tota l'amplada */
             .step {
-                margin: 0 0 0 0;
+                margin: 0;
                 max-width: 100%;
                 border-left: none;
                 border-top: 3px solid var(--orange);
                 border-radius: 0;
                 padding: 16px 18px;
-                margin-bottom: 2px;
+                /* Separació visual entre steps */
+                margin-bottom: 6px;
             }
-            .step:last-child { margin-bottom: 0; }
+            .step:last-child { margin-bottom: 20px; }
 
-            /* Hero adaptat: ocupa la zona del wrapper sticky */
-            #hero {
-                position: absolute;
-                top: 0; left: 0; right: 0;
-                height: 50vh;
-                z-index: 5;
-                padding: 0 5% 3vh;
-                justify-content: flex-end;
-                pointer-events: none;
-                /* Sobreescrivim el 'fixed' de desktop */
-            }
-            #hero h1 { font-size: 19px; margin-bottom: 10px; }
-            #hero p  { display: none; }
-
-            /* Outro: flux normal sota el scrolly */
-            #outro {
-                position: relative;
-                z-index: 10;
-                background: var(--bg);
-            }
-
-            /* Llegenda: fixada a la cantonada inferior DINS la zona del mapa (50vh),
-               per no solapar-se mai amb el text que va per sota */
-            #legend {
-                position: fixed;
-                bottom: calc(50vh + 8px);
-                top: auto;
-                left: 8px;
-                right: auto;
-                width: 155px;
-                padding: 8px 10px;
-            }
-            #legend h4              { font-size: 8px; }
-            .legend-section-title   { font-size: 8px; }
-            .legend-label           { font-size: 8.5px; }
-            .legend-swatch          { width: 10px; height: 10px; }
-
-            /* Barra de progrés i comptador */
+            /* Amaguem comptador, la barra de progrés és suficient */
             #step-counter { display: none; }
 
             /* Outro */
+            #outro {
+                padding: 5vh 5%;
+            }
             .stat-grid { grid-template-columns: 1fr 1fr; }
+
+            /* ── Llegenda com a icona toggle al mòbil ────────── */
+            /* Boton circular (icona "𝓘") fixat a la cantonada del mapa */
+            #legend-toggle {
+                display: flex;
+            }
+            #legend {
+                /* Posicionada a la cantonada inferior-dreta del mapa */
+                position: fixed;
+                bottom: calc(50vh + 10px);
+                right: 10px;
+                left: auto;
+                top: auto;
+                width: 210px;
+                padding: 12px 14px;
+                z-index: 25;
+                /* Inicialment collapsed (ocult fins que visible) */
+                transform-origin: bottom right;
+                transform: scale(0.85);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease, transform 0.25s ease;
+            }
+            #legend.visible {
+                opacity: 1;
+                transform: scale(1);
+                pointer-events: none; /* el toggle gestiona l'apertura */
+            }
+            /* Quan está expanded (toggle actiu), accepta clicks */
+            #legend.expanded {
+                pointer-events: auto;
+            }
+            /* Per defecte la llegenda es mostra collapsed: ocultem el cos */
+            #legend .legend-body {
+                display: none;
+            }
+            #legend.expanded .legend-body {
+                display: block;
+            }
+
+            /* Capçalera clicable de la llegenda (icona + text) */
+            #legend h4 {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                pointer-events: auto;
+                user-select: none;
+                margin-bottom: 0;
+            }
+            #legend h4::before {
+                content: '▶';
+                font-size: 7px;
+                transition: transform 0.2s ease;
+                display: inline-block;
+            }
+            #legend.expanded h4::before {
+                transform: rotate(90deg);
+            }
+            #legend.expanded h4 {
+                margin-bottom: 10px;
+            }
+            #legend h4              { font-size: 9px; }
+            .legend-section-title   { font-size: 8px; }
+            .legend-label           { font-size: 8.5px; }
+            .legend-swatch          { width: 10px; height: 10px; }
         }
     </style>
 </head>
@@ -483,27 +523,12 @@
 
     <div id="progress-bar"></div>
     <div id="step-counter">01 / 04</div>
-
-    <!-- Contenidor que agrupa mapa + hero. En desktop ambdós són fixed/absolute.
-         En mòbil el contenidor és sticky i ocupa la meitat superior de la pantalla,
-         de manera que el text fa scroll per sota sense cobrir el mapa. -->
-    <div id="map-hero-wrapper">
-        <div id="map"></div>
-        <!-- Hero dins del wrapper per superposar-se al mapa en mòbil -->
-        <div id="hero">
-            <div class="eyebrow">2026</div>
-            <h1>De la regeneració urbana<br>a la <em>ciutat de rendes</em></h1>
-            <p>Com la inversió en infraestructures, la festivalització i el mercat immobiliari estan transformant els barris del Gorg i la Mora de Badalona.</p>
-            <div class="scroll-hint">
-                <span class="scroll-arrow">↓</span>
-                <span>Fes scroll per explorar</span>
-            </div>
-        </div>
-    </div>
+    <div id="map"></div>
 
     <!-- Llegenda -->
     <div id="legend">
         <h4>Llegenda</h4>
+        <div class="legend-body">
         <div class="legend-section" id="leg-renda">
             <div class="legend-section-title">Evolució del lloguer 2019–2024 (%)</div>
             <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-9)"></div><div class="legend-label">168,7 – 200,8</div></div>
@@ -525,6 +550,18 @@
         <div class="legend-section" id="leg-huts" style="display:none">
             <div class="legend-section-title">Allotjaments turístics</div>
             <div class="legend-row"><div class="legend-swatch circle" style="background:var(--yellow);border:1px solid #000"></div><div class="legend-label">Allotjaments turístics registrats oficialment</div></div>
+        </div>
+        </div><!-- /.legend-body -->
+    </div>
+
+    <!-- Hero -->
+    <div id="hero">
+        <div class="eyebrow">2026</div>
+        <h1>De la regeneració urbana<br>a la <em>ciutat de rendes</em></h1>
+        <p>Com la inversió en infraestructures, la festivalització i el mercat immobiliari estan transformant els barris del Gorg i la Mora de Badalona.</p>
+        <div class="scroll-hint">
+            <span class="scroll-arrow">↓</span>
+            <span>Fes scroll per explorar</span>
         </div>
     </div>
 
@@ -741,12 +778,15 @@
             const legEdificis = document.getElementById('leg-edificis');
             const legHuts   = document.getElementById('leg-huts');
 
+            const isMobile = window.innerWidth <= 600;
             const scroller = scrollama();
 
             scroller.setup({
-                step:    '.step',
-                offset:  0.55,
-                progress: true
+                step:      '.step',
+                offset:    isMobile ? 0.35 : 0.55,
+                progress:  true,
+                container: isMobile ? '#scrolly' : undefined,
+                wrapper:   isMobile ? '#scrolly' : undefined,
             })
             .onStepEnter(({ element, index }) => {
                 // Marca el pas actiu
@@ -841,21 +881,16 @@
             // els zooms de passos posteriors (15, 15.2) no han estat demanats
             // i el mapa apareix "a trossos" en fer scroll.
             //
-            // IMPORTANT: NO posem canvas.style.opacity = 0 durant el warmup.
-            // Quan el canvas no es renderitza visualment, alguns navegadors optimitzen
-            // i no demanen les tiles, fent que l'idle salti sense carregar res.
-            // L'overlay ja tapa el mapa; el deixem renderitzar normalment per sota.
-            //
-            // Solució robusta:
-            // 1. Mantenim el canvas visible (tapat per l'overlay)
-            // 2. Fem jumpTo a cada posició del story i esperem idle
-            // 3. Afegim un petit delay addicional per assegurar-nos que les
-            //    tiles han acabat de decodificar-se (no només descarregar-se)
-            // 4. Tornem a la posició inicial i esperem un segon idle
-            //    abans de mostrar el mapa i amagar l'overlay
+            // Solució: fer un recorregut invisible per tots els zooms del story
+            // mantenint el mapa ocult (canvas opacity 0), i només quan tots els
+            // nivells hagin emès 'idle' consecutivament mostrar el mapa i amagar l'overlay.
 
             const overlay    = document.getElementById('loading-overlay');
             const loaderLabel = overlay.querySelector('.loader-label');
+            const canvas     = map.getCanvas();
+
+            // Ocultem el canvas mentre preallentem (l'overlay tapa de totes formes)
+            canvas.style.opacity = '0';
 
             // Seqüència de posicions a preallentar (totes les que s'usen al story)
             const warmupSteps = [
@@ -868,26 +903,19 @@
             let warmupIndex = 0;
             let fallbackTimer;
 
-            function finishLoading() {
-                clearTimeout(fallbackTimer);
-                // Tornem a la posició inicial del story
-                map.jumpTo({ center: [2.1686, 41.3874], zoom: 10, pitch: 0, bearing: 0 });
-                // Esperem que el mapa estigui idle en la posició inicial
-                map.once('idle', () => {
-                    // Petit retard addicional per garantir que el renderer
-                    // ha processat i decodificat totes les tiles en memòria
-                    setTimeout(() => {
-                        overlay.classList.add('hidden');
-                        overlay.addEventListener('transitionend', () => {
-                            if (overlay.parentNode) overlay.remove();
-                        }, { once: true });
-                    }, 200);
-                });
-            }
-
             function nextWarmup() {
                 if (warmupIndex >= warmupSteps.length) {
-                    finishLoading();
+                    // Tots els nivells estan a la caché del navegador → mostrem el mapa
+                    clearTimeout(fallbackTimer);
+                    // Tornem a la posició inicial silenciosament
+                    map.jumpTo({ center: [2.1686, 41.3874], zoom: 10, pitch: 0, bearing: 0 });
+                    map.once('idle', () => {
+                        // Fade in del canvas i fade out de l'overlay
+                        canvas.style.transition = 'opacity 0.5s ease';
+                        canvas.style.opacity = '1';
+                        overlay.classList.add('hidden');
+                        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+                    });
                     return;
                 }
 
@@ -897,31 +925,44 @@
                 // jumpTo és instantani (sense animació), perfecte per preallentar
                 map.jumpTo({ center: step.center, zoom: step.zoom, pitch: step.pitch, bearing: step.bearing });
 
-                // Esperem que el mapa estigui idle (totes les tiles del viewport carregades)
-                // Usem un petit delay post-idle per donar temps al renderer de completar
-                map.once('idle', () => {
-                    setTimeout(() => {
+                // Esperem un tick perquè el mapa pugui emetre les peticions de tiles,
+                // i llavors subscrivim a idle (que dispararà quan totes hagin carregat)
+                setTimeout(() => {
+                    map.once('idle', () => {
                         warmupIndex++;
                         nextWarmup();
-                    }, 80);
-                });
+                    });
+                }, 400);
             }
 
-            // Fallback de seguretat: si alguna tile no respon en 18 s, continua igualment
+            // Fallback de seguretat: si alguna tile no respon en 15 s, continua igualment
             fallbackTimer = setTimeout(() => {
                 warmupIndex = warmupSteps.length;
-                finishLoading();
-            }, 18000);
-
-            // Fallback global absolut
-            setTimeout(() => {
-                if (overlay.parentNode) {
-                    overlay.classList.add('hidden');
-                }
-            }, 22000);
+                nextWarmup();
+            }, 15000);
 
             // Comencem el tour de precalentament immediatament
             nextWarmup();
+
+            // Fallback global
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    canvas.style.opacity = '1';
+                    overlay.classList.add('hidden');
+                }
+            }, 20000);
+
+            // ── Toggle llegenda al mòbil ──────────────────────
+            // Al mòbil, la capçalera h4 de la llegenda actua com a toggle
+            if (window.innerWidth <= 600) {
+                const legendEl = document.getElementById('legend');
+                const legendH4 = legendEl.querySelector('h4');
+                legendH4.addEventListener('click', () => {
+                    legendEl.classList.toggle('expanded');
+                });
+                // Per defecte collapsed: no fem res addicional,
+                // el CSS ja gestiona la visibilitat de .legend-body
+            }
 
             window.addEventListener('resize', scroller.resize);
         });
