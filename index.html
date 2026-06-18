@@ -383,50 +383,78 @@
 
         /* ── Mobile ───────────────────────────────────────── */
         @media (max-width: 600px) {
-            /* Mapa ocupa la meitat superior */
+            /* Mapa fixe a la meitat superior: mai queda tapat */
             #map {
-                height: 55vh;
+                height: 52vh;
                 position: fixed;
                 top: 0; left: 0; right: 0;
                 bottom: auto;
+                z-index: 1;
             }
-            /* Steps es mostren a la part inferior */
-            #scrolly {
-                padding-top: calc(55vh + 12px);
-            }
-            .step {
-                margin: 0 0 36px 0;
-                max-width: 100%;
-                border-left: none;
-                border-top: 3px solid var(--orange);
-                border-radius: 0;
-                padding: 16px 18px;
-            }
-            .step:last-child { margin-bottom: 20px; }
-            /* Hero adaptat */
+
+            /* Hero dins de la zona del mapa */
             #hero {
-                height: 55vh;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 52vh;
+                z-index: 10;
                 padding: 0 5% 3vh;
                 justify-content: flex-end;
+                pointer-events: none;
             }
             #hero h1 { font-size: 19px; margin-bottom: 10px; }
             #hero p  { display: none; }
-            /* Llegenda compacta a la dreta */
+
+            /* Llegenda dins la zona del mapa, cantonada inferior-esquerra */
             #legend {
-                bottom: auto;
-                top: calc(55vh + 8px);
-                left: auto;
-                right: 10px;
-                width: 162px;
-                padding: 9px 11px;
+                position: fixed;
+                bottom: calc(48vh + 8px);
+                top: auto;
+                left: 10px;
+                right: auto;
+                width: 158px;
+                padding: 8px 10px;
+                z-index: 20;
             }
             #legend h4              { font-size: 8px; }
             .legend-section-title   { font-size: 8px; }
             .legend-label           { font-size: 8.5px; }
             .legend-swatch          { width: 10px; height: 10px; }
+
+            /* Zona de scroll: panell fix a la meitat inferior,
+               el contingut llisca DINS seu → el mapa mai queda tapat */
+            #scrolly {
+                position: fixed;
+                top: 52vh;
+                left: 0; right: 0; bottom: 0;
+                padding-top: 0;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                z-index: 10;
+                /* Fons per tal que el text sigui llegible */
+                background: var(--bg);
+            }
+
+            .step {
+                margin: 0 0 0 0;
+                max-width: 100%;
+                border-left: none;
+                border-top: 3px solid var(--orange);
+                border-radius: 0;
+                padding: 16px 18px;
+                /* Cada step ocupa tota l'amplada però sense altures fixes;
+                   el scrollama el detecta dins del panell */
+                min-height: 100%;
+            }
+            .step:last-child { margin-bottom: 20px; }
+
             /* Amaguem comptador, la barra de progrés és suficient */
             #step-counter { display: none; }
+
             /* Outro */
+            #outro {
+                padding: 5vh 5%;
+            }
             .stat-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
@@ -694,12 +722,15 @@
             const legEdificis = document.getElementById('leg-edificis');
             const legHuts   = document.getElementById('leg-huts');
 
+            const isMobile = window.innerWidth <= 600;
             const scroller = scrollama();
 
             scroller.setup({
-                step:    '.step',
-                offset:  0.55,
-                progress: true
+                step:      '.step',
+                offset:    0.55,
+                progress:  true,
+                container: isMobile ? '#scrolly' : undefined,
+                wrapper:   isMobile ? '#scrolly' : undefined,
             })
             .onStepEnter(({ element, index }) => {
                 // Marca el pas actiu
@@ -814,10 +845,12 @@
             ];
 
             let warmupIndex = 0;
+            let fallbackTimer;
 
             function nextWarmup() {
                 if (warmupIndex >= warmupSteps.length) {
                     // Tots els nivells estan a la caché del navegador → mostrem el mapa
+                    clearTimeout(fallbackTimer);
                     // Tornem a la posició inicial silenciosament
                     map.jumpTo({ center: [2.1686, 41.3874], zoom: 10, pitch: 0, bearing: 0 });
                     map.once('idle', () => {
@@ -836,15 +869,18 @@
                 // jumpTo és instantani (sense animació), perfecte per preallentar
                 map.jumpTo({ center: step.center, zoom: step.zoom, pitch: step.pitch, bearing: step.bearing });
 
-                // Esperem que el mapa estigui idle (totes les tiles del viewport carregades)
-                map.once('idle', () => {
-                    warmupIndex++;
-                    nextWarmup();
-                });
+                // Esperem un tick perquè el mapa pugui emetre les peticions de tiles,
+                // i llavors subscrivim a idle (que dispararà quan totes hagin carregat)
+                setTimeout(() => {
+                    map.once('idle', () => {
+                        warmupIndex++;
+                        nextWarmup();
+                    });
+                }, 400);
             }
 
             // Fallback de seguretat: si alguna tile no respon en 15 s, continua igualment
-            const fallbackTimer = setTimeout(() => {
+            fallbackTimer = setTimeout(() => {
                 warmupIndex = warmupSteps.length;
                 nextWarmup();
             }, 15000);
