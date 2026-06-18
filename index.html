@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>De la Regeneració Urbana a la Ciutat de Rendes — El Gorg, Badalona</title>
+    <title>De la Regeneració Urbana a la Ciutat de Rendes — El Gorg i la Mora, Badalona</title>
     
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
@@ -466,13 +466,13 @@
         </div>
         <div class="legend-section" id="leg-huts" style="display:none">
             <div class="legend-section-title">Allotjaments turístics</div>
-            <div class="legend-row"><div class="legend-swatch circle" style="background:var(--yellow);border:1px solid #000"></div><div class="legend-label">HUT registrat oficialmente</div></div>
+            <div class="legend-row"><div class="legend-swatch circle" style="background:var(--yellow);border:1px solid #000"></div><div class="legend-label">Allotjaments turístics registrats oficialment</div></div>
         </div>
     </div>
 
     <!-- Hero -->
     <div id="hero">
-        <div class="eyebrow">Treball de Fi de Grau · Badalona, 2024–2026</div>
+        <div class="eyebrow">2026</div>
         <h1>De la regeneració urbana<br>a la <em>ciutat de rendes</em></h1>
         <p>Com la inversió en infraestructures, la festivalització i el mercat immobiliari estan transformant els barris del Gorg i la Mora de Badalona.</p>
         <div class="scroll-hint">
@@ -496,7 +496,7 @@
         <div class="step" data-step="2">
             <div class="step-number">02 / 04 — Focus Badalona</div>
             <h2>La Bretxa de Rendes al litoral badaloní</h2>
-            <p>La revalorització no és homogènia. Mentre l'increment mitjà del lloguer a Badalona se situa en el 22%, la forta injecció de capital públic i privat fa que l'Àmbit Estadístic del Gorg i la Mora se dispari fins a un <strong style="color:var(--orange)">40,38%</strong> d'augment entre 2019 i 2024.</p>
+            <p>La revalorització no és homogènia. Mentre l'increment mitjà del lloguer a Badalona se situa en el 22%, la forta injecció de capital públic i privat fa que l'àmbit estadístic del Gorg i la Mora se dispari fins a un <strong style="color:var(--orange)">40,38%</strong> d'augment entre 2019 i 2024.</p>
             <div class="data-callout">
                 <small>Increment AEM Gorg–la Mora</small>
                 <span>+40,4%</span>
@@ -516,10 +516,9 @@
         <div class="step" data-step="4">
             <div class="step-number">04 / 04 — Pressió turística</div>
             <h2>La Paradoxa Turística</h2>
-            <p>Les llicències HUT (groc) estan pràcticament absents dels edificis nous —la normativa de 2025 ho prohibeix a primera línia—, però la pressió no desapareix: es desplaça cap al teixit residencial adjacent i es camufla sota el lloguer de temporada.</p>
+            <p>Les llicències turístiques (en groc) estan pràcticament absents dels edificis nous -la normativa de 2025 ho prohibeix a primera línia-, però la pressió no desapareix: es desplaça cap al teixit residencial adjacent i es camufla sota el lloguer de temporada.</p>
             <div class="data-callout">
-                <small>HUTs il·legals estimats vs. registrats</small>
-                <span>~1.000 <em style="font-size:13px;color:var(--text-dim)">vs. 227 oficials</em></span>
+                <small>Part dels lloguers ofertats a primera línia són de temporada</small>
             </div>
         </div>
     </main>
@@ -528,7 +527,7 @@
     <div id="outro">
         <h2>La <em>solució espacial</em> com a<br>mecanisme d'exclusió</h2>
         <p>El cas del Gorg i la Mora demostra que la inversió pública en infraestructures i la festivalització de l'espai no serveixen per millorar la qualitat de vida del veïnat existent, sinó per crear les condicions que permeten absorbir excedents de capital metropolità (Harvey, 2024).</p>
-        <p>La conseqüència és la substitució progressiva de la comunitat resident per poblacions de major poder adquisitiu —un procés clàssic d'acumulació per despossessió que opera sota l'eufemisme de la "regeneració urbana".</p>
+        <p>La conseqüència és la substitució progressiva de la comunitat resident per poblacions de major poder adquisitiu. Un procés clàssic d'acumulació per despossessió que opera sota l'eufemisme de la "regeneració urbana".</p>
         <div class="stat-grid">
             <div class="stat-box"><span class="num">+40%</span><span class="lbl">Augment del lloguer al Gorg (2019–24)</span></div>
             <div class="stat-box"><span class="num">2%</span><span class="lbl">Habitatge protegit sobre l'obra nova</span></div>
@@ -536,7 +535,7 @@
         </div>
         <div class="credit">
             Dades: INCASÒL, AMB, Cadastre, Registre de Turisme de Catalunya.<br>
-            Visor cartogràfic: MapLibre GL JS + MapTiler · TFG Universitat, 2026
+            Visor cartogràfic: MapLibre GL JS + MapTiler · TFG de Geografia, Medi Ambient i Planificació Territorial, UAB · Adrià Mezquita i Segura, 2026
         </div>
     </div>
 
@@ -810,7 +809,7 @@
             const warmupSteps = [
                 { label: 'Carregant escala metropolitana…', center: [2.1686, 41.3874], zoom: 10.5, pitch: 0,  bearing: 0   },
                 { label: 'Carregant Badalona…',             center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, bearing: -8  },
-                { label: 'Carregant el Gorg…',              center: [2.2355, 41.4411], zoom: 15,   pitch: 55, bearing: -15 },
+                { label: 'Carregant el Gorg i la Mora…',    center: [2.2355, 41.4411], zoom: 15,   pitch: 55, bearing: -15 },
                 { label: 'Carregant allotjaments…',         center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, bearing: -15 },
             ];
 
