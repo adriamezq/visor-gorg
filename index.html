@@ -7,7 +7,6 @@
     
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/pmtiles@2.11.0/dist/index.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
 
     <style>
@@ -46,67 +45,62 @@
     </main>
 
     <script>
-        // 1. Inicialitzar el protocol de PMTiles
-        let protocol = new pmtiles.Protocol();
-        maplibregl.addProtocol("pmtiles", protocol.tile);
+        // 1. LES TEVES CLAUS DE MAPTILER
+        const myApiKey = '9M9qZQCZlNegXMXSMKa5';
+        const myTilesetId = '019edc81-7252-7462-86a2-a4f5c68dbdef';
 
-        // 2. Inicialitzar el mapa i l'estil
+        // 2. Creem el mapa web amb el fons fosc de MapTiler
         const map = new maplibregl.Map({
             container: 'map',
             center: [2.2468, 41.4469], 
             zoom: 12.5,
             minZoom: 12, 
             maxZoom: 18,
-            style: {
-                version: 8,
-                sources: {
-                    'dades_tfg': {
-                        type: 'vector',
-                        url: 'pmtiles://./data/VisorDEF.pmtiles',
-                        minzoom: 12, 
-                        maxzoom: 15
-                    }
-                },
-                layers: [
-                    {
-                        'id': 'fons',
-                        'type': 'background',
-                        'paint': { 'background-color': '#0a0a0a' }
-                    },
-                    {
-                        'id': 'capa-edificis',
-                        'type': 'fill',
-                        'source': 'dades_tfg',
-                        'source-layer': 'POSA_AQUI_EL_NOM_DE_LA_CAPA_D_EDIFICIS', // <-- CANVIA AIXÒ
-                        'paint': {
-                            'fill-color': [
-                                'step',
-                                ['to-number', ['get', 'POSA_AQUI_LA_COLUMNA_ANY']], // <-- CANVIA AIXÒ
-                                '#1a1a1a',  
-                                2019, '#ff5500' 
-                            ],
-                            'fill-outline-color': '#cc00ff'
-                        }
-                    },
-                    {
-                        'id': 'capa-huts',
-                        'type': 'circle',
-                        'source': 'dades_tfg',
-                        'source-layer': 'POSA_AQUI_EL_NOM_DE_LA_CAPA_D_HUTS', // <-- CANVIA AIXÒ
-                        'paint': {
-                            'circle-color': '#ffff00',
-                            'circle-radius': 4,
-                            'circle-stroke-width': 1,
-                            'circle-stroke-color': '#000',
-                            'circle-opacity': 0.8
-                        }
-                    }
-                ]
-            }
+            style: `https://api.maptiler.com/maps/darkmatter/style.json?key=${myApiKey}`
         });
 
-        // 3. Configurem l'scroll amb Scrollama
+        // 3. Quan el mapa base estigui llest, carreguem les teves dades
         map.on('load', () => {
+            
+            // Connectem amb el teu conjunt de dades pujat a MapTiler
+            map.addSource('dades_tfg', {
+                type: 'vector',
+                url: `https://api.maptiler.com/tiles/${myTilesetId}/tiles.json?key=${myApiKey}`
+            });
+
+            // CAPA EDIFICIS
+            map.addLayer({
+                'id': 'capa-edificis',
+                'type': 'fill',
+                'source': 'dades_tfg',
+                'source-layer': 'edificis2', // Nom extret de la teva imatge
+                'paint': {
+                    'fill-color': [
+                        'step',
+                        ['to-number', ['get', 'any']], // <-- ÚNICA COSA A CANVIAR: El nom del teu camp de l'any a QGIS
+                        '#1a1a1a',  
+                        2019, '#ff5500' 
+                    ],
+                    'fill-outline-color': '#cc00ff'
+                }
+            });
+
+            // CAPA HUTS
+            map.addLayer({
+                'id': 'capa-huts',
+                'type': 'circle',
+                'source': 'dades_tfg',
+                'source-layer': 'huts2', // Nom extret de la teva imatge
+                'paint': {
+                    'circle-color': '#ffff00',
+                    'circle-radius': 4,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#000',
+                    'circle-opacity': 0.8
+                }
+            });
+
+            // 4. Configurem l'scroll
             const scroller = scrollama();
 
             scroller.setup({
