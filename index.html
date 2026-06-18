@@ -57,16 +57,15 @@
     </main>
 
     <script>
-        // 1. LES TEVES CLAUS DE MAPTILER
+        // Claus assignades directament
         const myApiKey = '9M9qZQCZlNegXMXSMKa5';
         const myTilesetId = '019edc81-7252-7462-86a2-a4f5c68dbdef';
 
-        // 2. ELS NOMS DE LES TEVES COLUMNES (MOLT IMPORTANT)
-        // Mira la teva captura de QGIS: el camp sembla dir-se "Hoja1_ev19-24" o "AEMlloguer". 
-        // Escriu aquí el nom exacte de la columna numèrica de l'increment:
-        const campIncrement = 'POSA_AQUI_LA_COLUMNA_DE_L_INCREMENT'; 
-        const campAny = 'POSA_AQUI_LA_COLUMNA_ANY'; 
-
+        // Noms dels camps per a la graduació dels lloguers
+        // Revisa que el nom coincideixi amb el del teu arxiu a QGIS 
+        const campIncrementAMB = 'AEMlloguer'; 
+        const campIncrementBDN = 'AEMlloguer'; 
+        
         const map = new maplibregl.Map({
             container: 'map',
             center: [2.1686, 41.3874], 
@@ -77,55 +76,67 @@
             interactive: false 
         });
 
-        // Objecte d'estil de color basat en les teves classes de QGIS
-        const estilGraduat = [
-            'step',
-            ['to-number', ['get', campIncrement]],
-            '#130a1c',       // Valors inferiors a 94.4
-            94.421, '#231131',
-            104.438, '#331846',
-            111.312, '#44205c',
-            116.894, '#562873',
-            123.172, '#69308a',
-            131.119, '#7c38a1',
-            145.103, '#9041b9',
-            168.686, '#a44ad1'  // Valors superiors a 168.6
-        ];
+        // Funció per generar l'estil graduat segons els valors de QGIS
+        function generarEstilGraduat(camp) {
+            return [
+                'step',
+                ['to-number', ['get', camp]],
+                '#130a1c',       
+                94.421, '#231131',
+                104.438, '#331846',
+                111.312, '#44205c',
+                116.894, '#562873',
+                123.172, '#69308a',
+                131.119, '#7c38a1',
+                145.103, '#9041b9',
+                168.686, '#a44ad1'  
+            ];
+        }
 
         map.on('load', () => {
-            
             map.addSource('dades_tfg', {
                 type: 'vector',
                 url: `https://api.maptiler.com/tiles/${myTilesetId}/tiles.json?key=${myApiKey}`
             });
 
-            // 1. CAPA AMB (Sencer) - Graduada
+            // 1. CAPA AMB (Sencer)
             map.addLayer({
                 'id': 'capa-aem-amb',
                 'type': 'fill',
                 'source': 'dades_tfg',
                 'source-layer': 'aem_sencer2',
                 'paint': {
-                    'fill-color': estilGraduat, 
+                    'fill-color': generarEstilGraduat(campIncrementAMB), 
                     'fill-opacity': 0.6,
                     'fill-outline-color': '#000000'
                 }
             });
 
-            // 2. CAPA BADALONA - Graduada
+            // 2. CAPA BADALONA
             map.addLayer({
                 'id': 'capa-aem-bdn',
                 'type': 'fill',
                 'source': 'dades_tfg',
                 'source-layer': 'aem_bdn2',
                 'paint': {
-                    'fill-color': estilGraduat,
+                    'fill-color': generarEstilGraduat(campIncrementBDN),
                     'fill-opacity': 0, 
                     'fill-outline-color': '#4a2b5e'
                 }
             });
 
-            // 3. CAPA EDIFICIS (Farcit) - Fórmula segura
+            // Expressió de seguretat per validar el camp "any" abans de pintar
+            const expressioAny = [
+                'case',
+                ['has', 'any'], [
+                    'case',
+                    ['>=', ['to-number', ['get', 'any']], 2019], true,
+                    false
+                ],
+                false
+            ];
+
+            // 3. CAPA EDIFICIS (Farcit)
             map.addLayer({
                 'id': 'capa-edificis',
                 'type': 'fill',
@@ -134,14 +145,14 @@
                 'paint': {
                     'fill-color': [
                         'case',
-                        ['>=', ['to-number', ['get', any]], 2019], '#ff7700', // Nous
-                        '#1f1f1f' // Antics o sense dades (Gris fosc)
+                        expressioAny, '#ff7700', 
+                        '#1f1f1f' 
                     ],
                     'fill-opacity': 0 
                 }
             });
 
-            // 4. CAPA EDIFICIS (Efecte Neó)
+            // 4. CAPA EDIFICIS (Efecte Glow/Neó)
             map.addLayer({
                 'id': 'capa-edificis-glow',
                 'type': 'line',
@@ -150,11 +161,11 @@
                 'paint': {
                     'line-color': [
                         'case',
-                        ['>=', ['to-number', ['get', campAny]], 2019], '#ffaa00', // Línia brillant
+                        expressioAny, '#ffaa00', 
                         'transparent' 
                     ],
-                    'line-width': 3,
-                    'line-blur': 3,
+                    'line-width': 4,
+                    'line-blur': 4,
                     'line-opacity': 0 
                 }
             });
@@ -167,14 +178,14 @@
                 'source-layer': 'huts2',
                 'paint': {
                     'circle-color': '#ffff00',
-                    'circle-radius': 3.5,
+                    'circle-radius': 4,
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000',
                     'circle-opacity': 0 
                 }
             });
 
-            // COREOGRAFIA
+            // GESTIÓ DE L'SCROLL
             const scroller = scrollama();
 
             scroller.setup({
@@ -202,23 +213,4 @@
                 else if (pas === "3") {
                     map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55, speed: 0.8 });
                     map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05); 
-                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
-                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
-                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.9);
-                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
-                }
-                else if (pas === "4") {
-                    map.flyTo({ center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, speed: 0.8 });
-                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05);
-                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
-                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
-                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.9);
-                    map.setPaintProperty('capa-huts', 'circle-opacity', 1); 
-                }
-            });
-
-            window.addEventListener('resize', scroller.resize);
-        });
-    </script>
-</body>
-</html>
+                    map.setPaintProperty('
