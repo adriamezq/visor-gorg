@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformació Urbana - El Gorg</title>
+    
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/pmtiles@2.11.0/dist/index.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #050505; }
+        #map { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        #scrolly { position: relative; z-index: 2; pointer-events: none; padding-top: 50vh; }
+        
+        .step {
+            margin: 0 5% 80vh auto;
+            max-width: 350px;
+            background: rgba(10, 10, 10, 0.9);
+            color: #e0e0e0;
+            padding: 25px;
+            border-left: 4px solid #ff5500;
+            border-radius: 4px;
+            pointer-events: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .step:last-child { margin-bottom: 50vh; }
+        h2 { color: #cc00ff; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <main id="scrolly">
+        <div class="step" data-step="1">
+            <h2>Badalona i l'entorn metropolità</h2>
+            <p>La distribució de l'edificació i la ubicació dels Habitatges d'Ús Turístic (HUTs).</p>
+        </div>
+        <div class="step" data-step="2">
+            <h2>El Boom del Gorg</h2>
+            <p>El mapa ressalta en neó la nova edificació aixecada a partir del 2019 entorn del canal.</p>
+        </div>
+    </main>
+
+    <script>
+        // Inicialitzem el lector de PMTiles
+        let protocol = new pmtiles.Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        // Creem el mapa web
+        const map = new maplibregl.Map({
+            container: 'map',
+            center: [2.2468, 41.4469], // Coordenades centrades a Badalona
+            zoom: 12.5,
+            style: {
+                version: 8,
+                sources: {
+                    'dades_tfg': {
+                        type: 'vector',
+                        url: 'pmtiles://./data/dades.pmtiles'
+                    }
+                },
+                layers: [
+                    {
+                        'id': 'fons',
+                        'type': 'background',
+                        'paint': { 'background-color': '#0a0a0a' }
+                    },
+                    {
+                        'id': 'capa-edificis',
+                        'type': 'fill',
+                        'source': 'dades_tfg',
+                        'source-layer': 'edificis',
+                        'paint': {
+                            'fill-color': [
+                                'step',
+                                ['to-number', ['get', 'any']],
+                                '#1a1a1a',  
+                                2019, '#ff5500' 
+                            ],
+                            'fill-outline-color': '#cc00ff'
+                        }
+                    },
+                    {
+                        'id': 'capa-huts',
+                        'type': 'circle',
+                        'source': 'dades_tfg',
+                        'source-layer': 'HUTbdn',
+                        'paint': {
+                            'circle-color': '#ffff00',
+                            'circle-radius': 4,
+                            'circle-stroke-width': 1,
+                            'circle-stroke-color': '#000',
+                            'circle-opacity': 0.8
+                        }
+                    }
+                ]
+            }
+        });
+
+        // Configurem l'scroll
+        map.on('load', () => {
+            const scroller = scrollama();
+
+            scroller.setup({
+                step: '.step',
+                offset: 0.6
+            }).onStepEnter((response) => {
+                const pas = response.element.dataset.step;
+
+                if (pas === "1") {
+                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.5, pitch: 0 });
+                } 
+                else if (pas === "2") {
+                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55 });
+                }
+            });
+
+            window.addEventListener('resize', scroller.resize);
+        });
+    </script>
+</body>
+</html>
