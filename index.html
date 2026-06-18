@@ -16,17 +16,18 @@
         
         .step {
             margin: 0 5% 80vh auto;
-            max-width: 350px;
-            background: rgba(10, 10, 10, 0.9);
+            max-width: 380px;
+            background: rgba(15, 15, 15, 0.92);
             color: #e0e0e0;
             padding: 25px;
-            border-left: 4px solid #ff5500;
+            border-left: 4px solid #ff7700;
             border-radius: 4px;
             pointer-events: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
         }
         .step:last-child { margin-bottom: 50vh; }
-        h2 { color: #cc00ff; margin-top: 0; }
+        h2 { color: #ff7700; margin-top: 0; }
+        p { line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -35,12 +36,23 @@
 
     <main id="scrolly">
         <div class="step" data-step="1">
-            <h2>Badalona i l'entorn metropolità</h2>
-            <p>La distribució de l'edificació i la ubicació dels Habitatges d'Ús Turístic (HUTs).</p>
+            <h2>L'Àrea Metropolitana com a espai d'acumulació</h2>
+            <p>La saturació del mercat immobiliari al centre de Barcelona força el desplaçament dels excedents de capital cap a noves fronteres urbanes perifèriques. Aquest metabolisme altera estructuralment els preus del lloguer a tota la regió.</p>
         </div>
+        
         <div class="step" data-step="2">
-            <h2>El Boom del Gorg</h2>
-            <p>El mapa ressalta en neó la nova edificació aixecada a partir del 2019 entorn del canal.</p>
+            <h2>Focus a Badalona: La Bretxa de Rendes</h2>
+            <p>La revalorització no és homogènia. Mentre l'increment mitjà del lloguer a Badalona se situa en el 22%, la forta injecció de capital públic i privat fa que l'Àmbit Estadístic del Gorg i la Mora es dispari fins a un 40,38% d'augment entre 2019 i 2024.</p>
+        </div>
+
+        <div class="step" data-step="3">
+            <h2>La Nova Construcció i l'Especulació</h2>
+            <p>Els edificis aixecats a partir de 2019 (il·luminats en taronja) materialitzen l'estratègia de la "nova centralitat". Aquesta intensa producció de l'espai accelera el tancament de la bretxa de rendes i consolida un model residencial d'alt estàndard que desplaça el veïnat tradicional.</p>
+        </div>
+
+        <div class="step" data-step="4">
+            <h2>La Paradoxa Turística</h2>
+            <p>Els punts grocs mostren la distribució dels Habitatges d'Ús Turístic. Malgrat les restriccions a primera línia de mar, la pressió no desapareix: es desplaça cap a la trama residencial adjacent, acompanyada per la irrupció del lloguer de temporada a les noves promocions.</p>
         </div>
     </main>
 
@@ -49,58 +61,103 @@
         const myApiKey = '9M9qZQCZlNegXMXSMKa5';
         const myTilesetId = '019edc81-7252-7462-86a2-a4f5c68dbdef';
 
-        // 2. Creem el mapa web amb el fons fosc de MapTiler
+        // 2. Inicialització del mapa
         const map = new maplibregl.Map({
             container: 'map',
-            center: [2.2468, 41.4469], 
-            zoom: 12.5,
-            minZoom: 12, 
+            center: [2.1686, 41.3874], // Centre AMB inicial
+            zoom: 10,
+            minZoom: 9, 
             maxZoom: 18,
-            style: `https://api.maptiler.com/maps/darkmatter/style.json?key=${myApiKey}`
+            style: `https://api.maptiler.com/maps/darkmatter/style.json?key=${myApiKey}`,
+            interactive: false // Desactivem el moviment manual per donar tot el control a l'scroll
         });
 
-        // 3. Quan el mapa base estigui llest, carreguem les teves dades
         map.on('load', () => {
             
-            // Connectem amb el teu conjunt de dades pujat a MapTiler
+            // Font de dades principal
             map.addSource('dades_tfg', {
                 type: 'vector',
                 url: `https://api.maptiler.com/tiles/${myTilesetId}/tiles.json?key=${myApiKey}`
             });
 
-            // CAPA EDIFICIS
+            // 1. CAPA AMB (Sencer) - Lila apagat
+            map.addLayer({
+                'id': 'capa-aem-amb',
+                'type': 'fill',
+                'source': 'dades_tfg',
+                'source-layer': 'aem_sencer2',
+                'paint': {
+                    'fill-color': '#4a2b5e', 
+                    'fill-opacity': 0.6,
+                    'fill-outline-color': '#1a0e22'
+                }
+            });
+
+            // 2. CAPA BADALONA - Lila lleugerament més marcat
+            map.addLayer({
+                'id': 'capa-aem-bdn',
+                'type': 'fill',
+                'source': 'dades_tfg',
+                'source-layer': 'aem_bdn2',
+                'paint': {
+                    'fill-color': '#63397d',
+                    'fill-opacity': 0, // Comença invisible
+                    'fill-outline-color': '#e0e0e0'
+                }
+            });
+
+            // 3. CAPA EDIFICIS (Farcit)
             map.addLayer({
                 'id': 'capa-edificis',
                 'type': 'fill',
                 'source': 'dades_tfg',
-                'source-layer': 'edificis2', // Nom extret de la teva imatge
+                'source-layer': 'edificis2',
                 'paint': {
                     'fill-color': [
                         'step',
-                        ['to-number', ['get', 'any']], // <-- ÚNICA COSA A CANVIAR: El nom del teu camp de l'any a QGIS
+                        ['to-number', ['get', 'POSA_AQUI_LA_COLUMNA_ANY']], // <-- CANVIA AIXÒ
                         '#1a1a1a',  
-                        2019, '#ff5500' 
+                        2019, '#ff7700' // Taronja
                     ],
-                    'fill-outline-color': '#cc00ff'
+                    'fill-opacity': 0 // Comença invisible
                 }
             });
 
-            // CAPA HUTS
+            // 4. CAPA EDIFICIS (Glow Efecte Resplendor)
+            map.addLayer({
+                'id': 'capa-edificis-glow',
+                'type': 'line',
+                'source': 'dades_tfg',
+                'source-layer': 'edificis2',
+                'paint': {
+                    'line-color': [
+                        'step',
+                        ['to-number', ['get', 'POSA_AQUI_LA_COLUMNA_ANY']], // <-- CANVIA AIXÒ
+                        'transparent',  
+                        2019, '#ff7700' 
+                    ],
+                    'line-width': 4,
+                    'line-blur': 4, // Això genera l'efecte neó
+                    'line-opacity': 0 // Comença invisible
+                }
+            });
+
+            // 5. CAPA HUTS
             map.addLayer({
                 'id': 'capa-huts',
                 'type': 'circle',
                 'source': 'dades_tfg',
-                'source-layer': 'huts2', // Nom extret de la teva imatge
+                'source-layer': 'huts2',
                 'paint': {
                     'circle-color': '#ffff00',
                     'circle-radius': 4,
                     'circle-stroke-width': 1,
                     'circle-stroke-color': '#000',
-                    'circle-opacity': 0.8
+                    'circle-opacity': 0 // Comença invisible
                 }
             });
 
-            // 4. Configurem l'scroll
+            // 3. COREOGRAFIA (Scrollama)
             const scroller = scrollama();
 
             scroller.setup({
@@ -110,10 +167,40 @@
                 const pas = response.element.dataset.step;
 
                 if (pas === "1") {
-                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.5, pitch: 0 });
+                    // Pas 1: Vista AMB. S'ensenya el lila fosc.
+                    map.flyTo({ center: [2.1686, 41.3874], zoom: 10.5, pitch: 0, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.6);
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0);
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0);
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
                 } 
                 else if (pas === "2") {
-                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55 });
+                    // Pas 2: Zoom Badalona. Destaca AEM_BDN2.
+                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.2); // Apaga la resta de l'AMB
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.8); // Ressalta Badalona
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0);
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
+                }
+                else if (pas === "3") {
+                    // Pas 3: Zoom al Gorg i apareixen Edificis + Glow.
+                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05); // Quasi invisible
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.8); // Activa el neó
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 0);
+                }
+                else if (pas === "4") {
+                    // Pas 4: Moviment subtil i apareixen HUTs grocs.
+                    map.flyTo({ center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, speed: 0.8 });
+                    map.setPaintProperty('capa-aem-amb', 'fill-opacity', 0.05);
+                    map.setPaintProperty('capa-aem-bdn', 'fill-opacity', 0.1);
+                    map.setPaintProperty('capa-edificis', 'fill-opacity', 0.9);
+                    map.setPaintProperty('capa-edificis-glow', 'line-opacity', 0.8);
+                    map.setPaintProperty('capa-huts', 'circle-opacity', 1); // Activa turisme
                 }
             });
 
