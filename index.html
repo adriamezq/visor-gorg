@@ -439,9 +439,15 @@
             /* Amaguem comptador, la barra de progrés és suficient */
             #step-counter { display: none; }
 
-            /* Outro */
+            /* Outro: confinat dins del flux normal de #scrolly */
             #outro {
+                position: relative;
+                z-index: 10;
+                min-height: auto;
                 padding: 5vh 5%;
+                background: var(--bg);
+                pointer-events: auto;
+            }
             }
             .stat-grid { grid-template-columns: 1fr 1fr; }
 
