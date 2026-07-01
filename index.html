@@ -3,657 +3,480 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>De la Regeneració Urbana a la Ciutat de Rendes — El Gorg i la Mora, Badalona</title>
-    
+    <title>De la regeneració urbana a la ciutat de rendes — El Gorg i la Mora, Badalona</title>
+
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* ── Reset & tokens ───────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── Loading overlay ──────────────────────────────── */
-        #loading-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            background: #080808;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            transition: opacity 0.6s ease;
-        }
-        #loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loader-label {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #ff7700;
-            opacity: 0.8;
-        }
-        .loader-bar-track {
-            width: 160px;
-            height: 2px;
-            background: rgba(255,119,0,0.2);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .loader-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: #ff7700;
-            border-radius: 2px;
-            animation: load-pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes load-pulse {
-            0%   { width: 0%; opacity: 1; }
-            70%  { width: 85%; opacity: 1; }
-            100% { width: 100%; opacity: 0; }
-        }
-
         :root {
-            --orange:    #ff7700;
-            --orange-dim:#b35200;
-            --yellow:    #ffe033;
-            --bg:        #080808;
-            --panel:     rgba(10, 10, 14, 0.93);
-            --text:      #d8d8d8;
-            --text-dim:  #888;
-            --border:    rgba(255,119,0,0.35);
-            /* Tot Space Grotesk: headings en 600, body en 400, labels en 500 */
-            --font-head: 'Space Grotesk', sans-serif;
-            --font-body: 'Space Grotesk', sans-serif;
+            /* ── Paleta extreta directament dels mapes del TFG ── */
+            --sand:        #dccfaa;   /* fons del mapa (beix/sorra) */
+            --sand-water:  #d0c69e;   /* aigua, lleugerament més fosc */
+            --paper:       #ece3cb;   /* fons del panell (crema càlid) */
+            --paper-soft:  #e4dabf;   /* alternança / rails */
+            --ink:         #181510;   /* text principal (negre càlid) */
+            --ink-soft:    #5c5442;   /* text secundari */
+            --ink-faint:   #8a8069;   /* text terciari / captions */
+            --orange:      #ff4900;   /* taronja del TFG (accent) */
+            --yellow:      #ffd400;   /* punts d'allotjament turístic */
+            --hair:        rgba(24,21,16,0.16);
+            --hair-strong: rgba(24,21,16,0.32);
 
-            /* Gradient lila per als intervals de renda */
-            --lila-0:   #f5eeff;
-            --lila-1:   #d9b8f5;
-            --lila-2:   #b87fe8;
-            --lila-3:   #9650d6;
-            --lila-4:   #7428b8;
-            --lila-5:   #561490;
-            --lila-6:   #3d0a6e;
-            --lila-7:   #280550;
-            --lila-8:   #160233;
-            --lila-9:   #0a0120;
+            --font: 'Space Grotesk', sans-serif;
+
+            /* Rampa grisa neutra de la coropleta (índex 100 del lloguer) */
+            --g0: #efe8d6; /* sense dades */
+            --g1: #e9e9e9;
+            --g2: #d0d0d0;
+            --g3: #b3b3b3;
+            --g4: #949494;
+            --g5: #6f6f6f;
+            --g6: #4f4f4f;
+            --g7: #353535;
+            --g8: #232323;
+            --g9: #141414;
         }
 
         html, body { height: 100%; }
         body {
-            background: var(--bg);
-            font-family: var(--font-body);
-            color: var(--text);
-            overflow-x: hidden;
+            background: var(--sand);
+            font-family: var(--font);
+            color: var(--ink);
+            overflow: hidden;                /* el scroll viu dins del panell */
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ── Mapa fixe ────────────────────────────────────── */
+        /* ── Mapa: ocupa els 2/3 esquerres ─────────────────── */
         #map {
             position: fixed;
-            inset: 0;
+            top: 0; left: 0; bottom: 0;
+            right: 34vw;
+            background: var(--sand);
             z-index: 1;
         }
 
-        /* ── Barra de progrés ─────────────────────────────── */
-        #progress-bar {
+        /* ── Overlay de càrrega ────────────────────────────── */
+        #loading-overlay {
             position: fixed;
-            top: 0; left: 0;
-            height: 3px;
-            width: 0%;
+            inset: 0;
+            z-index: 100;
+            background: var(--sand);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            transition: opacity 0.6s ease;
+        }
+        #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loader-label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            color: var(--ink-soft);
+        }
+        .loader-bar-track {
+            width: 180px; height: 2px;
+            background: var(--hair);
+            overflow: hidden;
+        }
+        .loader-bar-fill {
+            height: 100%; width: 0%;
             background: var(--orange);
-            z-index: 20;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 8px var(--orange);
+            animation: load-pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes load-pulse {
+            0%   { width: 0%;  opacity: 1; }
+            70%  { width: 85%; opacity: 1; }
+            100% { width: 100%; opacity: 0; }
         }
 
-        /* ── Indicador de pas ─────────────────────────────── */
-        #step-counter {
-            position: fixed;
-            top: 18px; right: 20px;
-            font-family: var(--font-head);
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            color: var(--orange);
-            z-index: 20;
-            opacity: 0.7;
-        }
-
-        /* ── Llegenda ─────────────────────────────────────── */
-        /* Control toggle (només visible al mòbil) */
-        #legend-toggle { display: none; }
-
+        /* ── Llegenda (a sobre del mapa, avall a l'esquerra) ─ */
         #legend {
             position: fixed;
-            bottom: 28px; left: 20px;
+            bottom: 22px; left: 22px;
             z-index: 20;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px 16px;
-            width: 210px;
+            background: var(--paper);
+            border: 1px solid var(--hair-strong);
+            padding: 14px 16px 15px;
+            width: 224px;
             font-size: 11px;
             opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
+            transition: opacity 0.45s ease;
+            box-shadow: 0 10px 30px rgba(24,21,16,0.12);
         }
         #legend.visible { opacity: 1; }
         #legend h4 {
-            font-family: var(--font-head);
-            font-size: 9px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--orange);
-            margin-bottom: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            color: var(--ink);
+            margin-bottom: 11px;
+            display: flex; align-items: baseline; justify-content: space-between;
         }
-        .legend-section { margin-bottom: 12px; }
+        #legend h4 .sub { font-weight: 400; color: var(--ink-faint); font-size: 10px; }
+        .legend-section { margin-bottom: 13px; }
         .legend-section:last-child { margin-bottom: 0; }
         .legend-section-title {
-            font-size: 10px;
-            color: var(--text-dim);
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
+            font-size: 10px; font-weight: 500;
+            color: var(--ink-soft);
+            margin-bottom: 7px;
+            letter-spacing: 0.005em;
+        }
+        /* Rampa contínua per a la renda */
+        .ramp {
+            display: flex; height: 12px; width: 100%;
+            border: 1px solid var(--hair);
+        }
+        .ramp span { flex: 1 1 auto; }
+        .ramp-scale {
+            display: flex; justify-content: space-between;
+            font-size: 9px; color: var(--ink-faint);
+            margin-top: 4px;
         }
         .legend-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 3px;
-            line-height: 1.3;
+            display: flex; align-items: center;
+            gap: 9px; margin-bottom: 5px; line-height: 1.3;
         }
-        .legend-swatch {
-            width: 14px; height: 14px;
-            border-radius: 2px;
-            flex-shrink: 0;
+        .legend-row:last-child { margin-bottom: 0; }
+        .legend-swatch { width: 14px; height: 14px; flex-shrink: 0; }
+        .legend-swatch.circle { border-radius: 50%; }
+        .legend-label { color: var(--ink); font-size: 11px; }
+        .legend-label em { color: var(--orange); font-style: normal; font-weight: 600; }
+        .legend-gorg {
+            margin-top: 9px; padding-top: 9px;
+            border-top: 1px solid var(--hair);
+            display: flex; align-items: center; gap: 9px;
         }
-        .legend-swatch.circle {
-            border-radius: 50%;
-        }
-        .legend-swatch.line-orange {
-            height: 3px;
-            border-radius: 2px;
-            background: var(--orange);
-            box-shadow: 0 0 6px var(--orange);
-        }
-        .legend-label { color: var(--text); font-size: 10.5px; }
-        .legend-label.highlight { color: var(--orange); font-weight: 600; }
-
-        /* ── Scroll container ─────────────────────────────── */
-        #scrolly {
-            position: relative;
-            z-index: 10;
-            pointer-events: none;
-            padding-top: 60vh;
+        .legend-gorg .tag {
+            width: 14px; height: 14px; flex-shrink: 0;
+            border: 1.5px solid var(--orange); background: transparent;
         }
 
-        /* ── Hero screen ─────────────────────────────────── */
-        #hero {
-            position: relative;
+        /* ── Panell continu (1/3 dret) ─────────────────────── */
+        #panel {
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            width: 34vw;
+            background: var(--paper);
+            border-left: 1px solid var(--hair-strong);
+            overflow-y: auto;
             z-index: 10;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 0 5% 10vh;
-            pointer-events: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--hair-strong) transparent;
         }
-        #hero .eyebrow {
-            font-family: var(--font-head);
-            font-size: 10px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--orange);
-            margin-bottom: 14px;
+        #panel::-webkit-scrollbar { width: 8px; }
+        #panel::-webkit-scrollbar-thumb { background: var(--hair-strong); }
+        #panel::-webkit-scrollbar-track { background: transparent; }
+
+        #panel-inner { position: relative; }
+
+        /* Capçalera fixa del panell */
+        .panel-head {
+            position: sticky; top: 0; z-index: 5;
+            background: var(--paper);
+            border-bottom: 1px solid var(--hair);
+            padding: 14px 40px 0;
         }
-        #hero h1 {
-            font-family: var(--font-head);
-            font-size: clamp(22px, 4vw, 42px);
-            font-weight: 700;
-            line-height: 1.15;
-            color: #fff;
-            max-width: 680px;
-            margin-bottom: 18px;
+        .panel-head .row {
+            display: flex; align-items: baseline; justify-content: space-between;
+            padding-bottom: 12px;
         }
-        #hero h1 em {
-            color: var(--orange);
-            font-style: normal;
+        .ph-title { font-size: 12px; font-weight: 500; color: var(--ink-soft); }
+        #step-counter {
+            font-size: 12px; font-weight: 500; color: var(--ink);
+            font-variant-numeric: tabular-nums;
         }
-        #hero p {
-            font-size: 14px;
-            color: var(--text-dim);
-            max-width: 480px;
-            line-height: 1.6;
-            margin-bottom: 28px;
+        .ph-track { height: 2px; background: var(--hair); width: 100%; }
+        #progress-fill { height: 100%; width: 0%; background: var(--orange); transition: width 0.35s ease; }
+
+        /* Blocs de contingut */
+        .block { padding: 0 40px; }
+
+        .intro { padding-top: 40px; padding-bottom: 6vh; }
+        .intro .eyebrow { font-size: 12px; color: var(--orange); font-weight: 500; margin-bottom: 16px; }
+        .intro h1 {
+            font-size: clamp(24px, 2.4vw, 34px);
+            font-weight: 600; line-height: 1.14; color: var(--ink);
+            letter-spacing: -0.01em; margin-bottom: 16px;
+        }
+        .intro h1 em { color: var(--orange); font-style: normal; }
+        .intro .lede { font-size: 15px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 20px; }
+        .intro .byline {
+            font-size: 12px; line-height: 1.6; color: var(--ink-faint);
+            border-top: 1px solid var(--hair); padding-top: 16px;
         }
         .scroll-hint {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: var(--font-head);
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            color: var(--text-dim);
+            margin-top: 22px; display: flex; align-items: center; gap: 9px;
+            font-size: 12px; color: var(--ink-faint);
         }
-        .scroll-arrow {
-            animation: bounce 1.8s ease-in-out infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(5px); }
-        }
+        .scroll-hint .arrow { animation: bob 1.8s ease-in-out infinite; color: var(--orange); }
+        @keyframes bob { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(4px);} }
 
-        /* ── Steps ────────────────────────────────────────── */
+        /* Cada pas: secció contínua, separada per un filet, sense caixa */
         .step {
-            margin: 0 5% 75vh auto;
-            max-width: 360px;
-            background: var(--panel);
-            color: var(--text);
-            padding: 22px 24px;
-            border-left: 3px solid var(--orange);
-            border-radius: 0 6px 6px 0;
-            pointer-events: auto;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.85);
-            transition: border-color 0.3s, box-shadow 0.3s;
-            position: relative;
+            padding-top: 9vh; padding-bottom: 9vh;
+            border-top: 1px solid var(--hair);
+            opacity: 0.4;
+            transition: opacity 0.4s ease;
         }
-        .step.is-active {
-            border-color: var(--orange);
-            box-shadow: 0 8px 40px rgba(0,0,0,0.9),
-                        -2px 0 20px rgba(255,119,0,0.2);
-        }
-
-        .step-number {
-            font-family: var(--font-head);
-            font-size: 9px;
-            letter-spacing: 0.2em;
-            color: var(--orange);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            opacity: 0.8;
+        .step.is-active { opacity: 1; }
+        .step .kicker {
+            font-size: 12px; font-weight: 500; color: var(--orange);
+            margin-bottom: 12px; font-variant-numeric: tabular-nums;
         }
         .step h2 {
-            font-family: var(--font-head);
-            font-size: 14px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 12px;
-            line-height: 1.3;
+            font-size: clamp(19px, 1.8vw, 24px);
+            font-weight: 600; line-height: 1.22; color: var(--ink);
+            letter-spacing: -0.005em; margin-bottom: 14px;
         }
         .step p {
-            font-size: 13px;
-            line-height: 1.65;
-            color: var(--text);
+            font-size: 15px; line-height: 1.62; color: var(--ink-soft);
+            margin-bottom: 14px;
         }
-        .step .data-callout {
-            display: inline-block;
-            background: rgba(255, 119, 0, 0.12);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 8px 12px;
-            margin-top: 12px;
-            font-family: var(--font-head);
-            font-size: 12px;
-            color: var(--orange);
-            width: 100%;
-        }
-        .step .data-callout span {
-            display: block;
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-        .step .data-callout small {
-            font-size: 9px;
-            letter-spacing: 0.1em;
-            color: var(--text-dim);
-            text-transform: uppercase;
-        }
-        .step:last-child { margin-bottom: 50vh; }
+        .step p:last-of-type { margin-bottom: 0; }
+        .step strong { color: var(--ink); font-weight: 600; }
+        .step .hl { color: var(--orange); font-weight: 600; }
 
-        /* ── Pantalla final ───────────────────────────────── */
-        #outro {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 10vh 5%;
-            pointer-events: none;
-            background: linear-gradient(to top, rgba(8,8,8,0.97) 60%, transparent);
+        /* Xifra clau: sense caixa ni fons, només un filet a dalt */
+        .figure {
+            margin-top: 22px; padding-top: 16px;
+            border-top: 1px solid var(--hair-strong);
         }
-        #outro h2 {
-            font-family: var(--font-head);
-            font-size: clamp(18px, 3vw, 30px);
-            color: #fff;
-            max-width: 620px;
-            line-height: 1.3;
-            margin-bottom: 20px;
+        .figure .num {
+            font-size: 40px; font-weight: 600; line-height: 1;
+            color: var(--orange); letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
         }
-        #outro h2 em { color: var(--orange); font-style: normal; }
-        #outro p {
-            font-size: 13px;
-            color: var(--text-dim);
-            max-width: 560px;
-            line-height: 1.7;
-            margin-bottom: 10px;
+        .figure .num small { font-size: 16px; color: var(--ink-faint); font-weight: 400; }
+        .figure .cap {
+            display: block; margin-top: 8px;
+            font-size: 12px; color: var(--ink-soft); line-height: 1.45;
         }
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-top: 28px;
-            max-width: 560px;
+        /* Dades secundàries en línia */
+        .note { margin-top: 16px; font-size: 13px; line-height: 1.55; color: var(--ink-faint); }
+
+        /* Sortida */
+        .outro { padding-top: 9vh; padding-bottom: 8vh; border-top: 1px solid var(--hair-strong); }
+        .outro h2 {
+            font-size: clamp(20px, 2vw, 26px); font-weight: 600;
+            line-height: 1.22; color: var(--ink); margin-bottom: 16px;
+            letter-spacing: -0.005em;
         }
-        .stat-box {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px;
+        .outro h2 em { color: var(--orange); font-style: normal; }
+        .outro p { font-size: 15px; line-height: 1.62; color: var(--ink-soft); margin-bottom: 14px; }
+        .stat-row {
+            display: flex; gap: 0; margin: 26px 0 6px;
+            border-top: 1px solid var(--hair-strong);
+            border-bottom: 1px solid var(--hair-strong);
         }
-        .stat-box .num {
-            font-family: var(--font-head);
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--orange);
-            display: block;
+        .stat-row .cell {
+            flex: 1; padding: 16px 12px 16px 0;
         }
-        .stat-box .lbl {
-            font-size: 10px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            line-height: 1.3;
-            margin-top: 4px;
-            display: block;
+        .stat-row .cell + .cell { padding-left: 16px; border-left: 1px solid var(--hair); }
+        .stat-row .n {
+            font-size: 30px; font-weight: 600; color: var(--orange);
+            line-height: 1; letter-spacing: -0.02em; display: block;
         }
+        .stat-row .l { font-size: 11px; color: var(--ink-soft); line-height: 1.35; margin-top: 8px; display: block; }
         .credit {
-            margin-top: 40px;
-            font-size: 10px;
-            color: var(--text-dim);
-            font-family: var(--font-head);
-            letter-spacing: 0.1em;
-            pointer-events: auto;
+            margin-top: 30px; padding-top: 18px;
+            border-top: 1px solid var(--hair);
+            font-size: 11px; line-height: 1.6; color: var(--ink-faint);
         }
+        .credit a { color: var(--ink-soft); }
 
-        /* ── Mobile ───────────────────────────────────────── */
-        @media (max-width: 600px) {
-            /* Mapa fixe a la meitat superior: mai queda tapat */
-            #map {
-                height: 50vh;
-                position: fixed;
-                top: 0; left: 0; right: 0;
-                bottom: auto;
-                z-index: 1;
-            }
-
-            /* Hero dins de la zona del mapa */
-            #hero {
-                position: fixed;
-                top: 0; left: 0; right: 0;
-                height: 50vh;
-                z-index: 10;
-                padding: 0 5% 3vh;
-                justify-content: flex-end;
-                pointer-events: none;
-            }
-            #hero h1 { font-size: 19px; margin-bottom: 10px; }
-            #hero p  { display: none; }
-
-            /* Zona de scroll: panell fix a la meitat inferior,
-               el contingut llisca DINS seu → el mapa mai queda tapat.
-               overflow-y:auto garanteix que el text NO surti mai
-               a la meitat superior (zona del mapa). */
-            #scrolly {
-                position: fixed;
-                top: 50vh;
-                left: 0; right: 0; bottom: 0;
-                padding-top: 0;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                z-index: 10;
-                background: var(--bg);
-                /* Eliminem el padding-top heretat del desktop */
-            }
-
-            .step {
-                margin: 0;
-                max-width: 100%;
-                border-left: none;
-                border-top: 3px solid var(--orange);
-                border-radius: 0;
-                padding: 16px 18px;
-                /* Separació visual entre steps */
-                margin-bottom: 6px;
-            }
-            .step:last-child { margin-bottom: 20px; }
-
-            /* Amaguem comptador, la barra de progrés és suficient */
-            #step-counter { display: none; }
-
-            /* Outro: confinat dins del flux normal de #scrolly */
-            #outro {
-                position: relative;
-                z-index: 10;
-                min-height: auto;
-                padding: 5vh 5%;
-                background: var(--bg);
-                pointer-events: auto;
-            }
-            }
-            .stat-grid { grid-template-columns: 1fr 1fr; }
-
-            /* ── Llegenda com a icona toggle al mòbil ────────── */
-            /* Boton circular (icona "𝓘") fixat a la cantonada del mapa */
-            #legend-toggle {
-                display: flex;
-            }
-            #legend {
-                /* Posicionada a la cantonada inferior-dreta del mapa */
-                position: fixed;
-                bottom: calc(50vh + 10px);
-                right: 10px;
-                left: auto;
-                top: auto;
-                width: 210px;
-                padding: 12px 14px;
-                z-index: 25;
-                /* Inicialment collapsed (ocult fins que visible) */
-                transform-origin: bottom right;
-                transform: scale(0.85);
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.25s ease, transform 0.25s ease;
-            }
-            #legend.visible {
-                opacity: 1;
-                transform: scale(1);
-                pointer-events: none; /* el toggle gestiona l'apertura */
-            }
-            /* Quan está expanded (toggle actiu), accepta clicks */
-            #legend.expanded {
-                pointer-events: auto;
-            }
-            /* Per defecte la llegenda es mostra collapsed: ocultem el cos */
-            #legend .legend-body {
-                display: none;
-            }
-            #legend.expanded .legend-body {
-                display: block;
-            }
-
-            /* Capçalera clicable de la llegenda (icona + text) */
-            #legend h4 {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                cursor: pointer;
-                pointer-events: auto;
-                user-select: none;
-                margin-bottom: 0;
-            }
-            #legend h4::before {
-                content: '▶';
-                font-size: 7px;
-                transition: transform 0.2s ease;
-                display: inline-block;
-            }
-            #legend.expanded h4::before {
-                transform: rotate(90deg);
-            }
-            #legend.expanded h4 {
-                margin-bottom: 10px;
-            }
-            #legend h4              { font-size: 9px; }
-            .legend-section-title   { font-size: 8px; }
-            .legend-label           { font-size: 8.5px; }
-            .legend-swatch          { width: 10px; height: 10px; }
+        /* ── Fallback bàsic per a mòbil (no és el focus) ───── */
+        @media (max-width: 720px) {
+            #map { right: 0; bottom: auto; height: 42vh; }
+            #panel { top: 42vh; width: 100%; border-left: none; border-top: 1px solid var(--hair-strong); }
+            .block, .panel-head { padding-left: 20px; padding-right: 20px; }
+            .panel-head { padding-top: 12px; }
+            #legend { bottom: calc(58vh + 12px); left: 12px; width: 200px; transform: scale(0.92); transform-origin: bottom left; }
+            .intro { padding-top: 26px; }
+            .step { padding-top: 7vh; padding-bottom: 7vh; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Loading overlay: s'amaga quan el mapa i les tiles estan a punt -->
     <div id="loading-overlay">
         <div class="loader-label">Carregant dades cartogràfiques…</div>
         <div class="loader-bar-track"><div class="loader-bar-fill"></div></div>
     </div>
 
-    <div id="progress-bar"></div>
-    <div id="step-counter">01 / 04</div>
     <div id="map"></div>
 
     <!-- Llegenda -->
     <div id="legend">
-        <h4>Llegenda</h4>
-        <div class="legend-body">
+        <h4>Llegenda <span class="sub">Gorg i la Mora</span></h4>
+
         <div class="legend-section" id="leg-renda">
-            <div class="legend-section-title">Evolució del lloguer 2019–2024 (%)</div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-9)"></div><div class="legend-label">168,7 – 200,8</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-8)"></div><div class="legend-label">145,1 – 168,7</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-7)"></div><div class="legend-label">131,1 – 145,1</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-6)"></div><div class="legend-label">123,2 – 131,1</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-5)"></div><div class="legend-label">116,9 – 123,2</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-4)"></div><div class="legend-label">111,3 – 116,9</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-3)"></div><div class="legend-label">104,4 – 111,3</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-2)"></div><div class="legend-label">94,4 – 104,4</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--lila-1)"></div><div class="legend-label">0 – 94,4</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:#2a1a3a;border:1px dashed #444"></div><div class="legend-label legend-highlight">Gorg i la Mora <em style="color:var(--orange)">+40,4%</em></div></div>
+            <div class="legend-section-title">Variació del lloguer 2019–2024 (índex 100)</div>
+            <div class="ramp">
+                <span style="background:var(--g1)"></span>
+                <span style="background:var(--g2)"></span>
+                <span style="background:var(--g3)"></span>
+                <span style="background:var(--g4)"></span>
+                <span style="background:var(--g5)"></span>
+                <span style="background:var(--g6)"></span>
+                <span style="background:var(--g7)"></span>
+                <span style="background:var(--g8)"></span>
+                <span style="background:var(--g9)"></span>
+            </div>
+            <div class="ramp-scale"><span>94</span><span>menor · major increment</span><span>201</span></div>
+            <div class="legend-gorg">
+                <span class="tag"></span>
+                <span class="legend-label">Gorg i la Mora <em>+40,4%</em></span>
+            </div>
         </div>
+
         <div class="legend-section" id="leg-edificis" style="display:none">
-            <div class="legend-section-title">Edificis</div>
-            <div class="legend-row"><div class="legend-swatch" style="background:#333"></div><div class="legend-label">Edificació anterior a 2019</div></div>
-            <div class="legend-row"><div class="legend-swatch" style="background:var(--orange)"></div><div class="legend-label">Construït des de 2019</div></div>
+            <div class="legend-section-title">Antiguitat dels edificis</div>
+            <div class="legend-row"><div class="legend-swatch" style="background:#333333"></div><div class="legend-label">Anteriors a 2019</div></div>
+            <div class="legend-row"><div class="legend-swatch" style="background:var(--orange)"></div><div class="legend-label">Construïts des de 2019</div></div>
         </div>
+
         <div class="legend-section" id="leg-huts" style="display:none">
             <div class="legend-section-title">Allotjaments turístics</div>
-            <div class="legend-row"><div class="legend-swatch circle" style="background:var(--yellow);border:1px solid #000"></div><div class="legend-label">Allotjaments turístics registrats oficialment</div></div>
-        </div>
-        </div><!-- /.legend-body -->
-    </div>
-
-    <!-- Hero -->
-    <div id="hero">
-        <div class="eyebrow">2026</div>
-        <h1>De la regeneració urbana<br>a la <em>ciutat de rendes</em></h1>
-        <p>Com la inversió en infraestructures, la festivalització i el mercat immobiliari estan transformant els barris del Gorg i la Mora de Badalona.</p>
-        <div class="scroll-hint">
-            <span class="scroll-arrow">↓</span>
-            <span>Fes scroll per explorar</span>
+            <div class="legend-row"><div class="legend-swatch circle" style="background:var(--yellow);border:1px solid var(--ink)"></div><div class="legend-label">Registrats oficialment (2026)</div></div>
         </div>
     </div>
 
-    <!-- Steps de scrollytelling -->
-    <main id="scrolly">
-        <div class="step" data-step="1">
-            <div class="step-number">01 / 04 — Escala metropolitana</div>
-            <h2>L'Àrea Metropolitana com a espai d'acumulació</h2>
-            <p>La saturació del mercat immobiliari al centre de Barcelona força el desplaçament dels excedents de capital cap a noves fronteres urbanes perifèriques. El mapa mostra la variació del preu del lloguer (%) per àmbits estadístics metropolitans (2019–2024): com més fosc el lila, major l'increment de rendes.</p>
-            <div class="data-callout">
-                <small>Increment mitjà AMB 2019–2024</small>
-                <span>+11,5%</span>
-            </div>
-        </div>
-        
-        <div class="step" data-step="2">
-            <div class="step-number">02 / 04 — Focus Badalona</div>
-            <h2>La Bretxa de Rendes al litoral badaloní</h2>
-            <p>La revalorització no és homogènia. Mentre l'increment mitjà del lloguer a Badalona se situa en el 22%, la forta injecció de capital públic i privat fa que l'àmbit estadístic del Gorg i la Mora se dispari fins a un <strong style="color:var(--orange)">40,38%</strong> d'augment entre 2019 i 2024.</p>
-            <div class="data-callout">
-                <small>Increment AEM Gorg–la Mora</small>
-                <span>+40,4%</span>
-            </div>
-        </div>
+    <!-- Panell continu -->
+    <div id="panel">
+        <div id="panel-inner">
 
-        <div class="step" data-step="3">
-            <div class="step-number">03 / 04 — Nova edificació</div>
-            <h2>La Nova Construcció i l'Especulació</h2>
-            <p>Els edificis aixecats a partir de 2019 (taronja) materialitzen l'estratègia de la "nova centralitat". D'un total de més de 400 habitatges nous, únicament 22 (un 2%) corresponen a habitatge protegit, malgrat que la llei n'exigeix el 30%.</p>
-            <div class="data-callout">
-                <small>Habitatge protegit sobre obra nova</small>
-                <span>2% <em style="font-size:13px;color:var(--text-dim)">(vs. 30% exigit)</em></span>
+            <div class="panel-head">
+                <div class="row">
+                    <span class="ph-title">De la regeneració urbana a la ciutat de rendes</span>
+                    <span id="step-counter">01 / 05</span>
+                </div>
+                <div class="ph-track"><div id="progress-fill"></div></div>
             </div>
-        </div>
 
-        <div class="step" data-step="4">
-            <div class="step-number">04 / 04 — Pressió turística</div>
-            <h2>La Paradoxa Turística</h2>
-            <p>Les llicències turístiques (en groc) estan pràcticament absents dels edificis nous -la normativa de 2025 ho prohibeix a primera línia-, però la pressió no desapareix: es desplaça cap al teixit residencial adjacent i es camufla sota el lloguer de temporada.</p>
-            <div class="data-callout">
-                <small>Part dels lloguers ofertats a primera línia són de temporada</small>
+            <div class="block intro">
+                <h1>Transformació dels barris <br>del Gorg i la Mora</h1>
+                <p class="lede">Com la inversió pública en infraestructures, la festivalització de l'espai i el mercat immobiliari converteixen un antic front industrial en una "nova centralitat" orientada a l'extracció de rendes.</p>
+                <div class="byline">
+                    Treball final de grau — Geografia, Medi Ambient i Planificació Territorial, UAB<br>
+                    Adrià Mezquita i Segura
+                </div>
+                <div class="scroll-hint"><span class="arrow">↓</span><span>Desplaça't per explorar el mapa</span></div>
             </div>
+
+            <!-- 01 -->
+            <section class="step block" data-step="1">
+                <div class="kicker">01 / 05 — Escala metropolitana</div>
+                <h2>L'Àrea Metropolitana com a espai d'acumulació</h2>
+                <p>La saturació del mercat immobiliari i la hipercentralització turística de Barcelona desplacen els excedents de capital cap a noves fronteres perifèriques —el que Harvey anomena <strong>solució espacial</strong> (<em>spatial fix</em>).</p>
+                <p>El mapa mostra la variació del preu del lloguer per àmbits estadístics metropolitans (2019–2024): com més fosc és el gris, major és l'increment del preu.</p>
+                <div class="figure">
+                    <div class="num">+11%  a l'AMB</div>
+                    <div class="num"><br>+22% a Badalona</div>
+                    <span class="cap">Increment mitjà del lloguer per àmbit estadístic metropolità (2019–2024).</span>
+                </div>
+                <p class="note">Entre 2011 i 2025, Badalona passa de 213.700 a 230.642 habitants.<br>El Gorg i la Mora, passen de 6.761 habitants a 10.765.</p>
+            </section>
+
+            <!-- 02 -->
+            <section class="step block" data-step="2">
+                <div class="kicker">02 / 05 — Focus Badalona</div>
+                <h2>La bretxa de rendes al litoral badaloní</h2>
+                <p>La revalorització no és homogènia. Mentre l'increment mitjà del lloguer a Badalona per àmbit és del <strong>22%</strong>, l'àmbit del Gorg i la Mora es dispara molt per sobre de tota la resta de la ciutat.</p>
+                <div class="figure">
+                    <div class="num">+40,4%</div>
+                    <span class="cap">Augment del preu del lloguer a l'àmbit Gorg – la Mora (2019–2024), segons l'INCASÒL.</span>
+                </div>
+                <p class="note">La renda mitjana de l'àmbit passa d'11.289 € (2015) a 17.457 € (2023), allunyant-se de la mitjana municipal (14.618 €).</p>
+            </section>
+
+            <!-- 03 -->
+            <section class="step block" data-step="3">
+                <div class="kicker">03 / 05 — Nova construcció</div>
+                <h2>Obra nova i la ineficàcia de l'habitatge protegit</h2>
+                <p>Els edificis aixecats des de 2019 (en <span class="hl">taronja</span>) concentren l'estratègia de la "nova centralitat". De més de <strong>400 habitatges privats</strong> nous, tot just <strong>22 són protegits</strong>.</p>
+                <div class="figure">
+                    <div class="num">2%<small> / 30% exigit</small></div>
+                    <span class="cap">Habitatge protegit sobre l'obra nova. La llei n'exigiria el 30% —uns 120 pisos socials perduts.</span>
+                </div>
+                <p class="note">El Canal del Gorg suma 17 milions d'euros de pressupost públic. Els 8 pisos de lloguer públic del carrer del Progrés es fixen a ~700 €/mes i exigeixen ingressos de 31.000–39.000 € anuals; 25 dels "protegits" es deleguen a la mateixa promotora del canal, Culmia.</p>
+            </section>
+
+            <!-- 04 -->
+            <section class="step block" data-step="4">
+                <div class="kicker">04 / 05 — Festivalització</div>
+                <h2>L'espectacle efímer com a marca de ciutat</h2>
+                <p>Els grans esdeveniments tematitzen l'espai públic i legitimen la inversió. La <strong>Copa del Rei de bàsquet</strong> (2023) va declarar un retorn de 15,6 milions d'euros i unes 100.000 visites a la Fan Zone del Gorg.</p>
+                <div class="figure">
+                    <div class="num">43 m</div>
+                    <span class="cap">Alçada de l'arbre de Nadal metàl·lic; 2,5 milions d'euros de despesa nadalenca i 50.000 persones a l'encesa.</span>
+                </div>
+                <p class="note">L'èxit es mesura rastrejant els telèfons mòbils per saber quants visitants vénen de fora de Badalona: l'indicador és el "creixement", no el benestar del veïnat.</p>
+            </section>
+
+            <!-- 05 -->
+            <section class="step block" data-step="5">
+                <div class="kicker">05 / 05 — Paradoxa turística</div>
+                <h2>Moratòria a primera línia, pressió al darrere</h2>
+                <p>La modificació del PGM (gener 2025) prohibeix nous habitatges d'ús turístic a la façana marítima —justament on hi ha l'obra nova (els punts <span class="hl">grocs</span> gairebé no hi apareixen)—, però la pressió no desapareix.</p>
+                <p>Es <strong>desplaça</strong> cap als carrers residencials adjacents, més antics i vulnerables, i es camufla en el <strong>lloguer de temporada</strong>.</p>
+                <div class="figure">
+                    <div class="num">227 <small>vs ~1.000</small></div>
+                    <span class="cap">HUT reconeguts per l'Ajuntament davant els prop de mil pisos turístics detectats operant sense llicència.</span>
+                </div>
+                <p class="note">S'ofereixen contractes "des de 32 dies fins a 11 mesos". L'abril de 2026, de 94 pisos en oferta a Badalona només una cinquantena eren residencials. El Sindicat de Llogateres va comptar 46 desnonaments en un sol mes (octubre de 2023).</p>
+            </section>
+
+            <!-- Outro -->
+            <div class="block outro">
+                <h2>La <em>solució espacial</em> com a mecanisme d'exclusió</h2>
+                <p>La inversió pública i la festivalització no milloren la vida del veïnat existent, sinó que creen les condicions per absorbir excedents de capital metropolità.</p>
+                <p>La conseqüència és la substitució progressiva de la comunitat resident: un procés clàssic d'acumulació per despossessió sota l'eufemisme de la "regeneració urbana".</p>
+                <div class="stat-row">
+                    <div class="cell"><span class="n">+40,4%</span><span class="l">Augment del lloguer al Gorg (2019–24)</span></div>
+                    <div class="cell"><span class="n">2%</span><span class="l">Habitatge protegit sobre l'obra nova</span></div>
+                </div>
+                <div class="credit">
+                    Dades: INCASÒL, AMB, Cadastre i Registre de Turisme de Catalunya.<br>
+                    Cartografia: QGIS · MapLibre GL JS · MapTiler · OpenStreetMap.<br>
+                    TFG de Geografia, Medi Ambient i Planificació Territorial (UAB) — Adrià Mezquita i Segura, 2026.
+                </div>
+            </div>
+
         </div>
-<div id="outro">
-        <h2>La <em>solució espacial</em> com a<br>mecanisme d'exclusió</h2>
-        <p>El cas del Gorg i la Mora demostra que la inversió pública en infraestructures i la festivalització de l'espai no serveixen per millorar la qualitat de vida del veïnat existent, sinó per crear les condicions que permeten absorbir excedents de capital metropolità (Harvey, 2024).</p>
-        <p>La conseqüència és la substitució progressiva de la comunitat resident per poblacions de major poder adquisitiu. Un procés clàssic d'acumulació per despossessió que opera sota l'eufemisme de la "regeneració urbana".</p>
-        <div class="stat-grid">
-            <div class="stat-box"><span class="num">+40%</span><span class="lbl">Augment del lloguer al Gorg (2019–24)</span></div>
-            <div class="stat-box"><span class="num">2%</span><span class="lbl">Habitatge protegit sobre l'obra nova</span></div>
-            <div class="stat-box"><span class="num">50%+</span><span class="lbl">Nous veïns del Gorg d'origen estranger</span></div>
-        </div>
-        <div class="credit">
-            Dades: INCASÒL, AMB, Cadastre, Registre de Turisme de Catalunya.<br>
-            Visor cartogràfic: MapLibre GL JS + MapTiler · TFG de Geografia, Medi Ambient i Planificació Territorial, UAB · Adrià Mezquita i Segura, 2026
-        </div>
-</div>
-    </main>
+    </div>
 
     <script>
         // ── Claus MapTiler ───────────────────────────────────
-        const myApiKey     = '9M9qZQCZlNegXMXSMKa5';
-        const myTilesetId  = '019edc81-7252-7462-86a2-a4f5c68dbdef';
+        const myApiKey    = '9M9qZQCZlNegXMXSMKa5';
+        const myTilesetId = '019edc81-7252-7462-86a2-a4f5c68dbdef';
 
-        // ── Intervals i colors per a la coropleta de renda ──
-        // Valors de tall provinents de les teves captures de pantalla QGIS:
-        // 0, 94.421, 104.438, 111.312, 116.894, 123.172, 131.119, 145.103, 168.686, 200.768
-        // Interpretació: índex 100 = sense canvi, 140 = +40%
-        // El degradat: 0–94 lila molt clar → 168–200 lila quasi negre
+        // ── Rampa grisa neutra per a la coropleta de renda ──
+        // Talls provinents del processament QGIS del TFG.
+        // índex 100 = sense canvi; com més alt, major l'increment.
         const RENDA_STOPS = [
-            [0,       '#1a0a2e'],   // valor 0 = sense dades, gairebé negre per destacar
-            [94.421,  '#f5eeff'],   // increment baix → lila palíd
-            [104.438, '#d9b8f5'],
-            [111.312, '#b87fe8'],
-            [116.894, '#9650d6'],
-            [123.172, '#7428b8'],
-            [131.119, '#561490'],
-            [145.103, '#3d0a6e'],
-            [168.686, '#280550'],
-            [200.768, '#0a0120'],   // increment màxim → lila fosc quasi negre
+            [0,       '#efe8d6'],   // sense dades → beix clar
+            [94.421,  '#e9e9e9'],
+            [104.438, '#d0d0d0'],
+            [111.312, '#b3b3b3'],
+            [116.894, '#949494'],
+            [123.172, '#6f6f6f'],
+            [131.119, '#4f4f4f'],
+            [145.103, '#353535'],
+            [168.686, '#232323'],
+            [200.768, '#141414'],
         ];
-
-        // Funció auxiliar per generar l'expressió 'interpolate' de MapLibre
         function rendaColorExpr(field) {
             const expr = ['interpolate', ['linear'], ['to-number', ['get', field], 0]];
-            RENDA_STOPS.forEach(([val, color]) => expr.push(val, color));
+            RENDA_STOPS.forEach(([v, c]) => expr.push(v, c));
             return expr;
         }
 
@@ -664,257 +487,207 @@
             zoom:      10,
             minZoom:   9,
             maxZoom:   18,
-            style:     `https://api.maptiler.com/maps/darkmatter/style.json?key=${myApiKey}`,
+            style:     `https://api.maptiler.com/maps/dataviz-light/style.json?key=${myApiKey}`,
             interactive: false
         });
 
-        // ── Atribució discreta ───────────────────────────────
         map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 
         map.on('load', () => {
 
-            // ── Font de dades principal ──────────────────────
+            // ── Recolorem la base a l'estètica sorra del TFG ──
+            // Fem la base beix, amaguem etiquetes i carrers per deixar
+            // només la silueta del territori (com als mapes del treball).
+            try {
+                map.getStyle().layers.forEach(l => {
+                    const id = (l.id || '').toLowerCase();
+                    try {
+                        if (l.type === 'background') {
+                            map.setPaintProperty(l.id, 'background-color', '#dccfaa');
+                        } else if (id.includes('water') || id.includes('sea') || id.includes('ocean')) {
+                            if (l.type === 'fill') map.setPaintProperty(l.id, 'fill-color', '#d0c69e');
+                            if (l.type === 'line') map.setPaintProperty(l.id, 'line-opacity', 0);
+                        } else if (l.type === 'symbol') {
+                            map.setLayoutProperty(l.id, 'visibility', 'none');
+                        } else if (l.type === 'line') {
+                            map.setPaintProperty(l.id, 'line-opacity', 0);
+                        } else if (l.type === 'fill' && (id.includes('land') || id.includes('landuse') || id.includes('landcover') || id.includes('building'))) {
+                            map.setPaintProperty(l.id, 'fill-opacity', 0);
+                        }
+                    } catch (e) {}
+                });
+            } catch (e) {}
+
+            // ── Font de dades del TFG ────────────────────────
             map.addSource('dades_tfg', {
                 type: 'vector',
                 url:  `https://api.maptiler.com/tiles/${myTilesetId}/tiles.json?key=${myApiKey}`
             });
 
-            // ── 1. CAPA AMB — Coropleta de renda (tot l'AMB) ─
-            // Nom de camp exacte: "AEMlloguersEV — Hoja1_ev19-24"
-            // MapLibre accepta noms amb espais i guions mitjançant ['get', 'nom del camp']
+            // 1. Coropleta de renda — tot l'AMB
             map.addLayer({
-                id:           'capa-aem-amb',
-                type:         'fill',
-                source:       'dades_tfg',
+                id: 'capa-aem-amb', type: 'fill', source: 'dades_tfg',
                 'source-layer': 'aem_sencer2',
                 paint: {
                     'fill-color':         rendaColorExpr('AEMlloguersEV — Hoja1_ev19-24'),
-                    'fill-opacity':       0.75,
-                    'fill-outline-color': 'rgba(120,80,200,0.25)'
+                    'fill-opacity':       0.85,
+                    'fill-outline-color': 'rgba(24,21,16,0.18)'
                 }
             });
 
-            // ── 2. CAPA BDN — Coropleta de renda (Badalona) ─
-            // S'afegeix per sobre de l'AMB amb opacitat 0 al principi
+            // 2. Coropleta de renda — Badalona
             map.addLayer({
-                id:           'capa-aem-bdn',
-                type:         'fill',
-                source:       'dades_tfg',
+                id: 'capa-aem-bdn', type: 'fill', source: 'dades_tfg',
                 'source-layer': 'aem_bdn2',
                 paint: {
-                    'fill-color':         rendaColorExpr('AEMlloguer'),     // ← ajusta el nom del camp si cal
+                    'fill-color':         rendaColorExpr('AEMlloguer'),
                     'fill-opacity':       0,
-                    'fill-outline-color': 'rgba(200,160,255,0.6)'
+                    'fill-outline-color': 'rgba(24,21,16,0.35)'
                 }
             });
 
-            // Contorn de Badalona destacat quan fem zoom
+            // Contorn de Badalona
             map.addLayer({
-                id:           'capa-aem-bdn-outline',
-                type:         'line',
-                source:       'dades_tfg',
+                id: 'capa-aem-bdn-outline', type: 'line', source: 'dades_tfg',
                 'source-layer': 'aem_bdn2',
-                paint: {
-                    'line-color':   '#c8a0ff',
-                    'line-width':   0.8,
-                    'line-opacity': 0
-                }
+                paint: { 'line-color': 'rgba(24,21,16,0.45)', 'line-width': 0.8, 'line-opacity': 0 }
             });
 
-            // ── 3. EDIFICIS — Farcit ────────────────────────
+            // 3. Edificis — farcit pla (dark = antic, taronja = des de 2019)
             map.addLayer({
-                id:           'capa-edificis',
-                type:         'fill',
-                source:       'dades_tfg',
+                id: 'capa-edificis', type: 'fill', source: 'dades_tfg',
                 'source-layer': 'edificis2',
                 paint: {
                     'fill-color': [
-                        'step',
-                        ['to-number', ['get', 'any'], 0],
-                        '#2a2a2a',      // construcció anterior a 2019
-                        2019, '#ff7700' // construcció 2019 en endavant → taronja
+                        'step', ['to-number', ['get', 'any'], 0],
+                        '#333333',
+                        2019, '#ff4900'
                     ],
-                    'fill-opacity': 0
+                    'fill-opacity': 0,
+                    'fill-outline-color': 'rgba(24,21,16,0.25)'
                 }
             });
 
-            // ── 4. EDIFICIS — Glow/neó (corregit) ─────────
+            // 4. Edificis — contorn nítid dels de nova construcció
             map.addLayer({
-                id:           'capa-edificis-glow',
-                type:         'line',
-                source:       'dades_tfg',
+                id: 'capa-edificis-glow', type: 'line', source: 'dades_tfg',
                 'source-layer': 'edificis2',
                 paint: {
                     'line-color': [
-                        'step',
-                        ['to-number', ['get', 'any'], 0],   // ← 'any' és el camp correcte
-                        'transparent',
-                        2019, '#ff7700'
+                        'step', ['to-number', ['get', 'any'], 0],
+                        'rgba(0,0,0,0)',
+                        2019, '#b83500'
                     ],
-                    'line-width':   3,
-                    'line-blur':    5,
+                    'line-width': 0.9,
                     'line-opacity': 0
                 }
             });
 
-            // ── 5. HUTs ─────────────────────────────────────
+            // 5. Allotjaments turístics (punts grocs)
             map.addLayer({
-                id:           'capa-huts',
-                type:         'circle',
-                source:       'dades_tfg',
+                id: 'capa-huts', type: 'circle', source: 'dades_tfg',
                 'source-layer': 'huts2',
                 paint: {
-                    'circle-color':        '#ffe033',
-                    'circle-radius':       4,
-                    'circle-stroke-width': 1,
-                    'circle-stroke-color': '#000',
-                    'circle-opacity':      0,
+                    'circle-color':          '#ffd400',
+                    'circle-radius':         4,
+                    'circle-stroke-width':   1,
+                    'circle-stroke-color':   '#181510',
+                    'circle-opacity':        0,
                     'circle-stroke-opacity': 0
                 }
             });
 
             // ── Scrollama ────────────────────────────────────
-            const steps     = document.querySelectorAll('.step');
-            const totalSteps = steps.length;
-            const counter   = document.getElementById('step-counter');
-            const progressBar = document.getElementById('progress-bar');
-            const legend    = document.getElementById('legend');
+            const steps       = document.querySelectorAll('.step');
+            const totalSteps  = steps.length;
+            const counter     = document.getElementById('step-counter');
+            const progressFill= document.getElementById('progress-fill');
+            const legend      = document.getElementById('legend');
+            const legRenda    = document.getElementById('leg-renda');
             const legEdificis = document.getElementById('leg-edificis');
-            const legHuts   = document.getElementById('leg-huts');
+            const legHuts     = document.getElementById('leg-huts');
 
-            const isMobile = window.innerWidth <= 600;
             const scroller = scrollama();
 
             scroller.setup({
                 step:      '.step',
-                offset:    isMobile ? 0.35 : 0.55,
-                progress:  true,
-                container: isMobile ? '#scrolly' : undefined,
-                wrapper:   isMobile ? '#scrolly' : undefined,
+                container: '#panel',
+                wrapper:   '#panel-inner',
+                offset:    0.5,
+                progress:  true
             })
             .onStepEnter(({ element, index }) => {
-                // Marca el pas actiu
                 steps.forEach(s => s.classList.remove('is-active'));
                 element.classList.add('is-active');
 
                 const pas = element.dataset.step;
-                const num = String(index + 1).padStart(2, '0');
-                counter.textContent = `${num} / 0${totalSteps}`;
-                progressBar.style.width = `${((index + 1) / totalSteps) * 100}%`;
+                counter.textContent = `0${index + 1} / 0${totalSteps}`;
+                progressFill.style.width = `${((index + 1) / totalSteps) * 100}%`;
+                legend.classList.add('visible');
 
-                // ── Coreografia per pas ──────────────────────
-
-                if (pas === "1") {
-                    // Vista AMB · mostra coropleta de tot el metropolità
-                    map.flyTo({ center: [2.1686, 41.3874], zoom: 10.5, pitch: 0, bearing: 0, speed: 0.8 });
-
-                    map.setPaintProperty('capa-aem-amb',     'fill-opacity', 0.75);
-                    map.setPaintProperty('capa-aem-bdn',     'fill-opacity', 0);
-                    map.setPaintProperty('capa-aem-bdn-outline', 'line-opacity', 0);
-                    map.setPaintProperty('capa-edificis',    'fill-opacity', 0);
-                    map.setPaintProperty('capa-edificis-glow','line-opacity', 0);
-                    map.setPaintProperty('capa-huts',        'circle-opacity', 0);
-                    map.setPaintProperty('capa-huts',        'circle-stroke-opacity', 0);
-
-                    legend.classList.add('visible');
-                    legEdificis.style.display = 'none';
-                    legHuts.style.display     = 'none';
+                if (pas === '1') {
+                    map.flyTo({ center: [2.1686, 41.3874], zoom: 10.4, pitch: 0, bearing: 0, speed: 0.8 });
+                    setLayers({ amb: 0.85, bdn: 0, bdnLine: 0, edif: 0, glow: 0, huts: 0 });
+                    showLegend({ renda: true, edif: false, huts: false });
                 }
-
-                else if (pas === "2") {
-                    // Zoom Badalona · destaca coropleta BDN
-                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, bearing: -8, speed: 0.75 });
-
-                    map.setPaintProperty('capa-aem-amb',     'fill-opacity', 0.2);
-                    map.setPaintProperty('capa-aem-bdn',     'fill-opacity', 0.88);
-                    map.setPaintProperty('capa-aem-bdn-outline', 'line-opacity', 0.7);
-                    map.setPaintProperty('capa-edificis',    'fill-opacity', 0);
-                    map.setPaintProperty('capa-edificis-glow','line-opacity', 0);
-                    map.setPaintProperty('capa-huts',        'circle-opacity', 0);
-                    map.setPaintProperty('capa-huts',        'circle-stroke-opacity', 0);
-
-                    legend.classList.add('visible');
-                    legEdificis.style.display = 'none';
-                    legHuts.style.display     = 'none';
+                else if (pas === '2') {
+                    map.flyTo({ center: [2.2468, 41.4469], zoom: 12.4, pitch: 15, bearing: -6, speed: 0.75 });
+                    setLayers({ amb: 0.22, bdn: 0.9, bdnLine: 0.7, edif: 0, glow: 0, huts: 0 });
+                    showLegend({ renda: true, edif: false, huts: false });
                 }
-
-                else if (pas === "3") {
-                    // Zoom 3D Gorg · edificis nous + glow
-                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 55, bearing: -15, speed: 0.75 });
-
-                    map.setPaintProperty('capa-aem-amb',     'fill-opacity', 0.03);
-                    map.setPaintProperty('capa-aem-bdn',     'fill-opacity', 0.06);
-                    map.setPaintProperty('capa-aem-bdn-outline', 'line-opacity', 0.15);
-                    map.setPaintProperty('capa-edificis',    'fill-opacity', 0.9);
-                    map.setPaintProperty('capa-edificis-glow','line-opacity', 0.85);
-                    map.setPaintProperty('capa-huts',        'circle-opacity', 0);
-                    map.setPaintProperty('capa-huts',        'circle-stroke-opacity', 0);
-
-                    legend.classList.add('visible');
-                    legEdificis.style.display = 'block';
-                    legHuts.style.display     = 'none';
+                else if (pas === '3') {
+                    map.flyTo({ center: [2.2355, 41.4411], zoom: 15, pitch: 50, bearing: -15, speed: 0.75 });
+                    setLayers({ amb: 0.05, bdn: 0.08, bdnLine: 0.15, edif: 0.95, glow: 0.9, huts: 0 });
+                    showLegend({ renda: false, edif: true, huts: false });
                 }
-
-                else if (pas === "4") {
-                    // Zoom lleuger + HUTs grocs
+                else if (pas === '4') {
+                    map.flyTo({ center: [2.2352, 41.4416], zoom: 15.1, pitch: 46, bearing: -12, speed: 0.75 });
+                    setLayers({ amb: 0.05, bdn: 0.08, bdnLine: 0.15, edif: 0.95, glow: 0.9, huts: 0 });
+                    showLegend({ renda: false, edif: true, huts: false });
+                }
+                else if (pas === '5') {
                     map.flyTo({ center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, bearing: -15, speed: 0.75 });
-
-                    map.setPaintProperty('capa-aem-amb',     'fill-opacity', 0.03);
-                    map.setPaintProperty('capa-aem-bdn',     'fill-opacity', 0.06);
-                    map.setPaintProperty('capa-aem-bdn-outline', 'line-opacity', 0.15);
-                    map.setPaintProperty('capa-edificis',    'fill-opacity', 0.9);
-                    map.setPaintProperty('capa-edificis-glow','line-opacity', 0.85);
-                    map.setPaintProperty('capa-huts',        'circle-opacity', 1);
-                    map.setPaintProperty('capa-huts',        'circle-stroke-opacity', 1);
-
-                    legend.classList.add('visible');
-                    legEdificis.style.display = 'block';
-                    legHuts.style.display     = 'block';
-                }
-            })
-            .onStepExit(({ index, direction }) => {
-                // Si sortim del primer pas cap amunt, amaguem llegenda
-                if (index === 0 && direction === 'up') {
-                    legend.classList.remove('visible');
+                    setLayers({ amb: 0.05, bdn: 0.08, bdnLine: 0.15, edif: 0.95, glow: 0.9, huts: 1 });
+                    showLegend({ renda: false, edif: true, huts: true });
                 }
             });
 
-            // ── Precalentament de tiles ───────────────────────
-            // El problema: les tiles vectorials es carreguen per demanda.
-            // Si l'overlay desapareix quan el zoom inicial (10.5) és idle,
-            // els zooms de passos posteriors (15, 15.2) no han estat demanats
-            // i el mapa apareix "a trossos" en fer scroll.
-            //
-            // Solució: fer un recorregut invisible per tots els zooms del story
-            // mantenint el mapa ocult (canvas opacity 0), i només quan tots els
-            // nivells hagin emès 'idle' consecutivament mostrar el mapa i amagar l'overlay.
+            function setLayers({ amb, bdn, bdnLine, edif, glow, huts }) {
+                map.setPaintProperty('capa-aem-amb', 'fill-opacity', amb);
+                map.setPaintProperty('capa-aem-bdn', 'fill-opacity', bdn);
+                map.setPaintProperty('capa-aem-bdn-outline', 'line-opacity', bdnLine);
+                map.setPaintProperty('capa-edificis', 'fill-opacity', edif);
+                map.setPaintProperty('capa-edificis-glow', 'line-opacity', glow);
+                map.setPaintProperty('capa-huts', 'circle-opacity', huts);
+                map.setPaintProperty('capa-huts', 'circle-stroke-opacity', huts);
+            }
+            function showLegend({ renda, edif, huts }) {
+                legRenda.style.display    = renda ? 'block' : 'none';
+                legEdificis.style.display = edif  ? 'block' : 'none';
+                legHuts.style.display     = huts  ? 'block' : 'none';
+            }
 
-            const overlay    = document.getElementById('loading-overlay');
+            // ── Precàrrega de tiles per evitar el mapa «a trossos» ──
+            const overlay     = document.getElementById('loading-overlay');
             const loaderLabel = overlay.querySelector('.loader-label');
-            const canvas     = map.getCanvas();
-
-            // Ocultem el canvas mentre preallentem (l'overlay tapa de totes formes)
+            const canvas      = map.getCanvas();
             canvas.style.opacity = '0';
 
-            // Seqüència de posicions a preallentar (totes les que s'usen al story)
             const warmupSteps = [
-                { label: 'Carregant escala metropolitana…', center: [2.1686, 41.3874], zoom: 10.5, pitch: 0,  bearing: 0   },
-                { label: 'Carregant Badalona…',             center: [2.2468, 41.4469], zoom: 12.5, pitch: 20, bearing: -8  },
-                { label: 'Carregant el Gorg i la Mora…',    center: [2.2355, 41.4411], zoom: 15,   pitch: 55, bearing: -15 },
+                { label: 'Carregant escala metropolitana…', center: [2.1686, 41.3874], zoom: 10.4, pitch: 0,  bearing: 0   },
+                { label: 'Carregant Badalona…',             center: [2.2468, 41.4469], zoom: 12.4, pitch: 15, bearing: -6  },
+                { label: 'Carregant el Gorg i la Mora…',    center: [2.2355, 41.4411], zoom: 15,   pitch: 50, bearing: -15 },
                 { label: 'Carregant allotjaments…',         center: [2.2370, 41.4420], zoom: 15.2, pitch: 45, bearing: -15 },
             ];
-
             let warmupIndex = 0;
             let fallbackTimer;
 
             function nextWarmup() {
                 if (warmupIndex >= warmupSteps.length) {
-                    // Tots els nivells estan a la caché del navegador → mostrem el mapa
                     clearTimeout(fallbackTimer);
-                    // Tornem a la posició inicial silenciosament
                     map.jumpTo({ center: [2.1686, 41.3874], zoom: 10, pitch: 0, bearing: 0 });
                     map.once('idle', () => {
-                        // Fade in del canvas i fade out de l'overlay
+                        map.resize();
                         canvas.style.transition = 'opacity 0.5s ease';
                         canvas.style.opacity = '1';
                         overlay.classList.add('hidden');
@@ -922,54 +695,23 @@
                     });
                     return;
                 }
-
                 const step = warmupSteps[warmupIndex];
                 loaderLabel.textContent = step.label;
-
-                // jumpTo és instantani (sense animació), perfecte per preallentar
                 map.jumpTo({ center: step.center, zoom: step.zoom, pitch: step.pitch, bearing: step.bearing });
-
-                // Esperem un tick perquè el mapa pugui emetre les peticions de tiles,
-                // i llavors subscrivim a idle (que dispararà quan totes hagin carregat)
                 setTimeout(() => {
-                    map.once('idle', () => {
-                        warmupIndex++;
-                        nextWarmup();
-                    });
+                    map.once('idle', () => { warmupIndex++; nextWarmup(); });
                 }, 400);
             }
-
-            // Fallback de seguretat: si alguna tile no respon en 15 s, continua igualment
-            fallbackTimer = setTimeout(() => {
-                warmupIndex = warmupSteps.length;
-                nextWarmup();
-            }, 15000);
-
-            // Comencem el tour de precalentament immediatament
+            fallbackTimer = setTimeout(() => { warmupIndex = warmupSteps.length; nextWarmup(); }, 15000);
             nextWarmup();
 
-            // Fallback global
             setTimeout(() => {
-                if (overlay.parentNode) {
-                    canvas.style.opacity = '1';
-                    overlay.classList.add('hidden');
-                }
+                if (overlay.parentNode) { canvas.style.opacity = '1'; overlay.classList.add('hidden'); }
             }, 20000);
 
-            // ── Toggle llegenda al mòbil ──────────────────────
-            // Al mòbil, la capçalera h4 de la llegenda actua com a toggle
-            if (window.innerWidth <= 600) {
-                const legendEl = document.getElementById('legend');
-                const legendH4 = legendEl.querySelector('h4');
-                legendH4.addEventListener('click', () => {
-                    legendEl.classList.toggle('expanded');
-                });
-                // Per defecte collapsed: no fem res addicional,
-                // el CSS ja gestiona la visibilitat de .legend-body
-            }
-
-            window.addEventListener('resize', scroller.resize);
+            window.addEventListener('resize', () => { scroller.resize(); map.resize(); });
         });
     </script>
 </body>
 </html>
+
